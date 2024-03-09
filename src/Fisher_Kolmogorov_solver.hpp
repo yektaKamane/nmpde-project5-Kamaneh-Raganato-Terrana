@@ -37,20 +37,8 @@ public:
   // Physical dimension (1D, 2D, 3D)
   static constexpr unsigned int dim = 2;
 
-  // Function for the mu_0 coefficient.
-  class FunctionMu0 : public Function<dim>
-  {
-  public:
-    virtual double
-    value(const Point<dim> & /*p*/,
-          const unsigned int /*component*/ = 0) const override
-    {
-      return 0.1;
-    }
-  };
-
-  // Function for the mu_1 coefficient.
-  class FunctionMu1 : public Function<dim>
+  // Function for the alpha coefficient.
+  class FunctionAlpha : public Function<dim>
   {
   public:
     virtual double
@@ -69,10 +57,7 @@ public:
     value(const Point<dim> & /*p*/,
           const unsigned int /*component*/ = 0) const override
     {
-      if (get_time() < 0.25)
-        return 2.0;
-      else
-        return 0.0;
+      return 0.0;
     }
   };
 
@@ -154,11 +139,8 @@ protected:
 
   // Problem definition. ///////////////////////////////////////////////////////
 
-  // mu_0 coefficient.
-  FunctionMu0 mu_0;
-
-  // mu_1 coefficient.
-  FunctionMu1 mu_1;
+  // alpha coefficient.
+  FunctionAlpha alpha;
 
   // Forcing term.
   ForcingTerm forcing_term;

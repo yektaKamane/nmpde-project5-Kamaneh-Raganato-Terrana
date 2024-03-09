@@ -129,10 +129,7 @@ FisherKol::assemble_system()
       for (unsigned int q = 0; q < n_q; ++q)
         {
           // Evaluate coefficients on this quadrature node.
-          const double mu_0_loc = mu_0.value(fe_values.quadrature_point(q));
-          const double mu_1_loc = mu_1.value(fe_values.quadrature_point(q));
-          const double f_loc =
-            forcing_term.value(fe_values.quadrature_point(q));
+          const double alpha_loc = alpha.value(fe_values.quadrature_point(q));
 
           for (unsigned int i = 0; i < dofs_per_cell; ++i)
             {
@@ -145,18 +142,18 @@ FisherKol::assemble_system()
 
                   // Non-linear stiffness matrix, first term.
                   cell_matrix(i, j) +=
-                    (mu_0_loc + 2.0 * mu_1_loc * fe_values.shape_value(j, q) *
-                                  solution_loc[q]) *
-                    scalar_product(solution_gradient_loc[q],
-                                   fe_values.shape_grad(i, q)) *
-                    fe_values.JxW(q);
+                          // multiply by the D matrix //
+                          scalar_product(fe_values.shape_grad(j, q),
+                                        fe_values.shape_grad(i, q)) *
+                          fe_values.JxW(q);
 
                   // Non-linear stiffness matrix, second term.
                   cell_matrix(i, j) +=
-                    (mu_0_loc + mu_1_loc * solution_loc[q] * solution_loc[q]) *
-                    scalar_product(fe_values.shape_grad(j, q),
-                                   fe_values.shape_grad(i, q)) *
-                    fe_values.JxW(q);
+                          alpha_loc * (1 - 2 * solution_loc[q]) * 
+                          fe_values.shape_value(j, q) *
+                          fe_values.shape_value(i, q) *
+                          fe_values.JxW(q);
+
                 }
 
               // Assemble the residual vector (with changed sign).
@@ -166,16 +163,18 @@ FisherKol::assemble_system()
                                   deltat * fe_values.shape_value(i, q) *
                                   fe_values.JxW(q);
 
-              // Diffusion term.
+              // first term.
               cell_residual(i) -=
-                (mu_0_loc + mu_1_loc * solution_loc[q] * solution_loc[q]) *
-                scalar_product(solution_gradient_loc[q],
+                    scalar_product(solution_gradient_loc[q],
                                fe_values.shape_grad(i, q)) *
-                fe_values.JxW(q);
+                    fe_values.JxW(q);
 
-              // Forcing term.
-              cell_residual(i) +=
-                f_loc * fe_values.shape_value(i, q) * fe_values.JxW(q);
+              // second term.
+              cell_residual(i) += alpha_loc *
+                                  solution_loc[q] *
+                                  (1.0 - solution_loc[q]) *
+                                  fe_values.shape_value(i, q) * 
+                                  fe_values.JxW(q);
             }
         }
 
@@ -193,30 +192,30 @@ FisherKol::assemble_system()
   // u_{n+1}^{(k+1)} and u_{n+1}^{(k)}. Both must satisfy the same Dirichlet
   // boundary conditions: therefore, on the boundary, delta = u_{n+1}^{(k+1)} -
   // u_{n+1}^{(k+1)} = 0. We impose homogeneous Dirichlet BCs.
-  {
-    std::map<types::global_dof_index, double> boundary_values;
+  // {
+  //   std::map<types::global_dof_index, double> boundary_values;
 
-    std::map<types::boundary_id, const Function<dim> *> boundary_functions;
-    Functions::ZeroFunction<dim>                        zero_function;
+  //   std::map<types::boundary_id, const Function<dim> *> boundary_functions;
+  //   Functions::ZeroFunction<dim>                        zero_function;
 
-    // changed from 6 to 4 to match the physical dim of the problem
-    // from 3d to 2d
-    for (unsigned int i = 0; i < 4; ++i)
-      boundary_functions[i] = &zero_function;
+  //   // changed from 6 to 4 to match the physical dim of the problem
+  //   // from 3d to 2d
+  //   for (unsigned int i = 0; i < 4; ++i)
+  //     boundary_functions[i] = &zero_function;
 
-    VectorTools::interpolate_boundary_values(dof_handler,
-                                             boundary_functions,
-                                             boundary_values);
+  //   VectorTools::interpolate_boundary_values(dof_handler,
+  //                                            boundary_functions,
+  //                                            boundary_values);
 
-    MatrixTools::apply_boundary_values(
-      boundary_values, jacobian_matrix, delta_owned, residual_vector, false);
-  }
+  //   MatrixTools::apply_boundary_values(
+  //     boundary_values, jacobian_matrix, delta_owned, residual_vector, false);
+  // }
 }
 
 void
 FisherKol::solve_linear_system()
 {
-  SolverControl solver_control(1000, 1e-6 * residual_vector.l2_norm());
+  SolverControl solver_control(1000, 1e-12 * residual_vector.l2_norm());
 
   SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
   TrilinosWrappers::PreconditionSSOR      preconditioner;
@@ -238,21 +237,21 @@ FisherKol::solve_newton()
 
   // We apply the boundary conditions to the initial guess (which is stored in
   // solution_owned and solution).
-  {
-    IndexSet dirichlet_dofs = DoFTools::extract_boundary_dofs(dof_handler);
-    dirichlet_dofs          = dirichlet_dofs & dof_handler.locally_owned_dofs();
+  // {
+  //   IndexSet dirichlet_dofs = DoFTools::extract_boundary_dofs(dof_handler);
+  //   dirichlet_dofs          = dirichlet_dofs & dof_handler.locally_owned_dofs();
 
-    function_g.set_time(time);
+  //   function_g.set_time(time);
 
-    TrilinosWrappers::MPI::Vector vector_dirichlet(solution_owned);
-    VectorTools::interpolate(dof_handler, function_g, vector_dirichlet);
+  //   TrilinosWrappers::MPI::Vector vector_dirichlet(solution_owned);
+  //   VectorTools::interpolate(dof_handler, function_g, vector_dirichlet);
 
-    for (const auto &idx : dirichlet_dofs)
-      solution_owned[idx] = vector_dirichlet[idx];
+  //   for (const auto &idx : dirichlet_dofs)
+  //     solution_owned[idx] = vector_dirichlet[idx];
 
-    solution_owned.compress(VectorOperation::insert);
-    solution = solution_owned;
-  }
+  //   solution_owned.compress(VectorOperation::insert);
+  //   solution = solution_owned;
+  // }
 
   while (n_iter < n_max_iters && residual_norm > residual_tolerance)
     {
