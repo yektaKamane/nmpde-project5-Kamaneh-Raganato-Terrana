@@ -143,7 +143,12 @@ FisherKolmogorov::assemble_system()
         {
           // Evaluate coefficients on this quadrature node.
           const double alpha_loc = alpha.value(fe_values.quadrature_point(q));
-          const double D_loc = D.value(fe_values.quadrature_point(q));
+          // const double D_loc = D.value(fe_values.quadrature_point(q));
+          std::vector<Point<dim>> points(1, fe_values.quadrature_point(q));
+          std::vector<Tensor<2, dim>> D_values(1); // D_values is a vector of tensors
+          D.value_list(points, D_values);
+          const Tensor<2, dim> D_loc = D_values[0];
+
           // const double f_loc =
           //   forcing_term.value(fe_values.quadrature_point(q));
 
@@ -157,8 +162,7 @@ FisherKolmogorov::assemble_system()
                                        fe_values.JxW(q);
 
                   // Stiffness matrix, second term.
-                  cell_matrix(i, j) += D_loc * // TO FIX
-                                       scalar_product(fe_values.shape_grad(i, q),
+                  cell_matrix(i, j) += scalar_product(D_loc * fe_values.shape_grad(i, q),
                                                       fe_values.shape_grad(j, q)) *
                                        fe_values.JxW(q);
 
@@ -178,8 +182,7 @@ FisherKolmogorov::assemble_system()
                                   fe_values.JxW(q);
 
               // Diffusion term.
-              cell_residual(i) -= D_loc * // TO FIX
-                                  scalar_product(fe_values.shape_grad(i, q),
+              cell_residual(i) -= scalar_product(D_loc * fe_values.shape_grad(i, q),
                                                  solution_gradient_loc[q]) *
                                   fe_values.JxW(q);
 
@@ -252,7 +255,7 @@ FisherKolmogorov::assemble_system()
 void
 FisherKolmogorov::solve_linear_system()
 {
-  SolverControl solver_control(1000, 1e-6 * residual_vector.l2_norm());
+  SolverControl solver_control(1000, 1e-14 * residual_vector.l2_norm());
 
   SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
   TrilinosWrappers::PreconditionSSOR      preconditioner;
@@ -267,7 +270,7 @@ void
 FisherKolmogorov::solve_newton()
 {
   const unsigned int n_max_iters        = 1000;
-  const double       residual_tolerance = 1e-6;
+  const double       residual_tolerance = 1e-14;
 
   unsigned int n_iter        = 0;
   double       residual_norm = residual_tolerance + 1;
