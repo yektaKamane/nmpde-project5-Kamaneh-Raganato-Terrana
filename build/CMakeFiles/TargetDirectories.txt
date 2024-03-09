@@ -1,3 +1,0 @@
-/home/yekta/platform/nmpde-project5-Kamaneh-Raganato-Terrana/build/CMakeFiles/rebuild_cache.dir
-/home/yekta/platform/nmpde-project5-Kamaneh-Raganato-Terrana/build/CMakeFiles/edit_cache.dir
-/home/yekta/platform/nmpde-project5-Kamaneh-Raganato-Terrana/build/CMakeFiles/solver.dir
