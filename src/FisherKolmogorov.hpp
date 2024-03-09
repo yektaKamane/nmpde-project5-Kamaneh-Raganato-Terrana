@@ -37,16 +37,32 @@ public:
   // Physical dimension (1D, 2D, 3D)
   static constexpr unsigned int dim = 3;
 
-  // Function for the mu_0 coefficient.
-  class FunctionD : public Function<dim>
-  {
-  public:
-    virtual double
-    value(const Point<dim> & /*p*/,
-          const unsigned int /*component*/ = 0) const override
-    {
-      return 0.0002;
+  class DiffusionTensor {
+public:
+    using value_type = dealii::Tensor<2, dim, double>;
+
+    // Constructor: Initialize with isotropic and anisotropic components
+    DiffusionTensor(double d_ext, double d_axn, const dealii::Tensor<1, dim, double>& n)
+        : d_ext_(d_ext), d_axn_(d_axn), n_(n) {}
+
+    // Evaluate the diffusion tensor at a given point
+    value_type evaluate(const dealii::Point<dim>& point) const {
+        // Construct the diffusion tensor D = d_ext * I + d_axn * n x n
+        value_type D;
+        D = d_ext_ * dealii::unit_symmetric_tensor<dim>();
+        //here I perform the tensor product of n with itself multiplying by d_axn
+        //and then I add the result to the isotropic part
+        for (unsigned int i = 0; i < dim; ++i) {
+            for (unsigned int j = 0; j < dim; ++j) {
+                D[i][j] += d_axn_ * n_[i] * n_[j];
+            }
+        }
+        return D;
     }
+    private:
+    double d_ext_; // Isotropic extracellular diffusion coefficient
+    double d_axn_; // Anisotropic axonal transport coefficient
+    dealii::Tensor<1, dim, double> n_; // Axonal fiber direction
   };
 
   // Function for the mu_1 coefficient.
