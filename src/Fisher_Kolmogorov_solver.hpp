@@ -45,8 +45,33 @@ public:
     value(const Point<dim> & /*p*/,
           const unsigned int /*component*/ = 0) const override
     {
-      return 1.0;
+      return 2.0;
     }
+  };
+
+  // Function of the matrix D
+  class FunctionD
+  {
+  public:
+    Tensor<2, dim> matrix_value(const Point<dim> & /*p*/ /* ,
+                   Tensor<2,dim> &values */
+    ) const
+    {
+      Tensor<2, dim> values;
+      for (unsigned int i = 0; i < dim; ++i)
+      {
+        for (unsigned int j = 0; j < dim; ++j)
+        {
+          if (i == j)
+            values[i][j] = 0.1;
+          else
+            values[i][j] = 0.0;
+        }
+      }
+      values[1][1] += 0.2;
+      return values;
+    }
+
   };
 
   // Function for the forcing term.
@@ -78,9 +103,14 @@ public:
   {
   public:
     virtual double
-    value(const Point<dim> & /*p*/,
+    value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
+      if (p[0] < 0.5 && p[0] > 0.35 && p[1] < 0.5 && p[1] > 0.35)
+      {
+        return 0.1;
+      }
+
       return 0.0;
     }
   };
@@ -141,6 +171,9 @@ protected:
 
   // alpha coefficient.
   FunctionAlpha alpha;
+
+  // matrix D.
+  FunctionD D;
 
   // Forcing term.
   ForcingTerm forcing_term;

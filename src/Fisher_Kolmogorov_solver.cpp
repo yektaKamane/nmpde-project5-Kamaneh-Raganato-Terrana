@@ -130,6 +130,7 @@ FisherKol::assemble_system()
         {
           // Evaluate coefficients on this quadrature node.
           const double alpha_loc = alpha.value(fe_values.quadrature_point(q));
+           const Tensor<2, dim> D_matrix = D.matrix_value(fe_values.quadrature_point(q));
 
           for (unsigned int i = 0; i < dofs_per_cell; ++i)
             {
@@ -143,13 +144,13 @@ FisherKol::assemble_system()
                   // Non-linear stiffness matrix, first term.
                   cell_matrix(i, j) +=
                           // multiply by the D matrix //
-                          scalar_product(fe_values.shape_grad(j, q),
+                          scalar_product(D_matrix * fe_values.shape_grad(j, q),
                                         fe_values.shape_grad(i, q)) *
                           fe_values.JxW(q);
 
                   // Non-linear stiffness matrix, second term.
                   cell_matrix(i, j) +=
-                          alpha_loc * (1 - 2 * solution_loc[q]) * 
+                          alpha_loc * (1.0 - 2.0 * solution_loc[q]) * 
                           fe_values.shape_value(j, q) *
                           fe_values.shape_value(i, q) *
                           fe_values.JxW(q);
@@ -165,7 +166,7 @@ FisherKol::assemble_system()
 
               // first term.
               cell_residual(i) -=
-                    scalar_product(solution_gradient_loc[q],
+                    scalar_product( D_matrix * solution_gradient_loc[q],
                                fe_values.shape_grad(i, q)) *
                     fe_values.JxW(q);
 
