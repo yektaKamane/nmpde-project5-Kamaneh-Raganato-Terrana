@@ -136,24 +136,24 @@ FisherKol::assemble_system()
             {
               for (unsigned int j = 0; j < dofs_per_cell; ++j)
                 {
-                  // Mass matrix.
                   cell_matrix(i, j) += fe_values.shape_value(i, q) *
-                                       fe_values.shape_value(j, q) / deltat *
-                                       fe_values.JxW(q);
+                               fe_values.shape_value(j, q) / deltat *
+                               fe_values.JxW(q);
 
-                  // Non-linear stiffness matrix, first term.
-                  cell_matrix(i, j) +=
-                          // multiply by the D matrix //
-                          scalar_product( D_matrix * fe_values.shape_grad(j, q),
-                                        fe_values.shape_grad(i, q)) *
-                          fe_values.JxW(q);
+          cell_matrix(i, j) -= alpha_loc *
+                               fe_values.shape_value(j, q) *
+                               fe_values.shape_value(i, q) *
+                               fe_values.JxW(q);
 
-                  // Non-linear stiffness matrix, second term.
-                  cell_matrix(i, j) -=
-                          alpha_loc * (1.0 - 2.0 * solution_loc[q]) * 
-                          fe_values.shape_value(j, q) *
-                          fe_values.shape_value(i, q) *
-                          fe_values.JxW(q);
+          cell_matrix(i, j) += 2.0 * alpha_loc *
+                               solution_loc[q] *
+                               fe_values.shape_value(j, q) *
+                               fe_values.shape_value(i, q) *
+                               fe_values.JxW(q);
+
+          const Tensor<1, dim> &grad_phi_i = fe_values.shape_grad(i, q);
+          const Tensor<1, dim> &grad_phi_j = fe_values.shape_grad(j, q);
+          cell_matrix(i, j) += scalar_product(D_matrix * grad_phi_j, grad_phi_i) * fe_values.JxW(q);
                 }
 
               // Assemble the residual vector (with changed sign).
@@ -192,7 +192,7 @@ FisherKol::assemble_system()
 void
 FisherKol::solve_linear_system()
 {
-  SolverControl solver_control(10000, 1e-12 * residual_vector.l2_norm());
+  SolverControl solver_control(100000, 1e-12 * residual_vector.l2_norm());
 
   SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
   TrilinosWrappers::PreconditionSSOR      preconditioner;

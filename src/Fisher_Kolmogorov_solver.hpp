@@ -59,9 +59,16 @@ public:
       Tensor<2, dim> values;
       for (unsigned int i = 0; i < dim; ++i)
       {
-        values[i][i] = 0.2;
+        for (unsigned int j = 0; j < dim; ++j){
+          if (i = j) {
+            values[i][j] = 0.8;
+          }
+          else{
+            values[i][j] = 0.0;
+          }
+        }
       }
-      // values[1][1] += 0.2;
+      // values[1][1] += 10.0;
       return values;
     }
 
