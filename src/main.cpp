@@ -9,7 +9,7 @@ main(int argc, char *argv[])
   const unsigned int degree = 1;
 
   const double T      = 2.0;
-  const double deltat = 0.05;
+  const double deltat = 0.1;
 
   FisherKol problem("../mesh/mesh-square-20.msh", degree, T, deltat);
 

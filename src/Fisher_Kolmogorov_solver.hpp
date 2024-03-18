@@ -54,21 +54,14 @@ public:
   {
   public:
     Tensor<2, dim> matrix_value(const Point<dim> & /*p*/ /* ,
-                   Tensor<2,dim> &values */
-    ) const
+                   Tensor<2,dim> &values */) const
     {
       Tensor<2, dim> values;
       for (unsigned int i = 0; i < dim; ++i)
       {
-        for (unsigned int j = 0; j < dim; ++j)
-        {
-          if (i == j)
-            values[i][j] = 0.1;
-          else
-            values[i][j] = 0.0;
-        }
+        values[i][i] = 0.2;
       }
-      values[1][1] += 0.2;
+      // values[1][1] += 0.2;
       return values;
     }
 
@@ -106,7 +99,7 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      if (p[0] < 0.5 && p[0] > 0.35 && p[1] < 0.5 && p[1] > 0.35)
+      if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
       {
         return 0.1;
       }

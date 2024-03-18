@@ -144,17 +144,16 @@ FisherKol::assemble_system()
                   // Non-linear stiffness matrix, first term.
                   cell_matrix(i, j) +=
                           // multiply by the D matrix //
-                          scalar_product(D_matrix * fe_values.shape_grad(j, q),
+                          scalar_product( D_matrix * fe_values.shape_grad(j, q),
                                         fe_values.shape_grad(i, q)) *
                           fe_values.JxW(q);
 
                   // Non-linear stiffness matrix, second term.
-                  cell_matrix(i, j) +=
+                  cell_matrix(i, j) -=
                           alpha_loc * (1.0 - 2.0 * solution_loc[q]) * 
                           fe_values.shape_value(j, q) *
                           fe_values.shape_value(i, q) *
                           fe_values.JxW(q);
-
                 }
 
               // Assemble the residual vector (with changed sign).
@@ -188,35 +187,12 @@ FisherKol::assemble_system()
   jacobian_matrix.compress(VectorOperation::add);
   residual_vector.compress(VectorOperation::add);
 
-  // We apply Dirichlet boundary conditions.
-  // The linear system solution is delta, which is the difference between
-  // u_{n+1}^{(k+1)} and u_{n+1}^{(k)}. Both must satisfy the same Dirichlet
-  // boundary conditions: therefore, on the boundary, delta = u_{n+1}^{(k+1)} -
-  // u_{n+1}^{(k+1)} = 0. We impose homogeneous Dirichlet BCs.
-  // {
-  //   std::map<types::global_dof_index, double> boundary_values;
-
-  //   std::map<types::boundary_id, const Function<dim> *> boundary_functions;
-  //   Functions::ZeroFunction<dim>                        zero_function;
-
-  //   // changed from 6 to 4 to match the physical dim of the problem
-  //   // from 3d to 2d
-  //   for (unsigned int i = 0; i < 4; ++i)
-  //     boundary_functions[i] = &zero_function;
-
-  //   VectorTools::interpolate_boundary_values(dof_handler,
-  //                                            boundary_functions,
-  //                                            boundary_values);
-
-  //   MatrixTools::apply_boundary_values(
-  //     boundary_values, jacobian_matrix, delta_owned, residual_vector, false);
-  // }
 }
 
 void
 FisherKol::solve_linear_system()
 {
-  SolverControl solver_control(1000, 1e-12 * residual_vector.l2_norm());
+  SolverControl solver_control(10000, 1e-12 * residual_vector.l2_norm());
 
   SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
   TrilinosWrappers::PreconditionSSOR      preconditioner;
@@ -235,24 +211,6 @@ FisherKol::solve_newton()
 
   unsigned int n_iter        = 0;
   double       residual_norm = residual_tolerance + 1;
-
-  // We apply the boundary conditions to the initial guess (which is stored in
-  // solution_owned and solution).
-  // {
-  //   IndexSet dirichlet_dofs = DoFTools::extract_boundary_dofs(dof_handler);
-  //   dirichlet_dofs          = dirichlet_dofs & dof_handler.locally_owned_dofs();
-
-  //   function_g.set_time(time);
-
-  //   TrilinosWrappers::MPI::Vector vector_dirichlet(solution_owned);
-  //   VectorTools::interpolate(dof_handler, function_g, vector_dirichlet);
-
-  //   for (const auto &idx : dirichlet_dofs)
-  //     solution_owned[idx] = vector_dirichlet[idx];
-
-  //   solution_owned.compress(VectorOperation::insert);
-  //   solution = solution_owned;
-  // }
 
   while (n_iter < n_max_iters && residual_norm > residual_tolerance)
     {
