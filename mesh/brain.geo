@@ -9,7 +9,7 @@ CreateTopology; // AGGIUNTO
 // Classify ("color") the surfaces
 DefineConstant[
     // Angle between two triangles above which an edge is considered as sharp
-    angle = {40, Min 20, Max 120, Step 1,
+    angle = {90, Min 0, Max 180, Step 1,
       Name "Parameters/Angle for surface detection"},
     // For complex geometries, patches can be too complex, too elongated or too
     // large to be parametrized; setting the following option will force the
