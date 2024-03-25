@@ -140,21 +140,26 @@ FisherKol::assemble_system()
                                fe_values.shape_value(j, q) / deltat *
                                fe_values.JxW(q);
 
-          cell_matrix(i, j) -= alpha_loc *
-                               fe_values.shape_value(j, q) *
-                               fe_values.shape_value(i, q) *
-                               fe_values.JxW(q);
+                  cell_matrix(i, j) -= alpha_loc *
+                                      fe_values.shape_value(j, q) *
+                                      fe_values.shape_value(i, q) *
+                                      fe_values.JxW(q);
 
-          cell_matrix(i, j) += 2.0 * alpha_loc *
-                               solution_loc[q] *
-                               fe_values.shape_value(j, q) *
-                               fe_values.shape_value(i, q) *
-                               fe_values.JxW(q);
+                  cell_matrix(i, j) += 2.0 * alpha_loc *
+                                      solution_loc[q] *
+                                      fe_values.shape_value(j, q) *
+                                      fe_values.shape_value(i, q) *
+                                      fe_values.JxW(q);
 
-          const Tensor<1, dim> &grad_phi_i = fe_values.shape_grad(i, q);
-          const Tensor<1, dim> &grad_phi_j = fe_values.shape_grad(j, q);
-          cell_matrix(i, j) += scalar_product(D_matrix * grad_phi_j, grad_phi_i) * fe_values.JxW(q);
-                }
+                  const Tensor<1, dim> &grad_phi_i = fe_values.shape_grad(i, q);
+                  const Tensor<1, dim> &grad_phi_j = fe_values.shape_grad(j, q);
+                  // if (i==0 && j==1){
+                  //   std::cout << grad_phi_j << ", " << grad_phi_i << std::endl;
+                  //   std::cout << D_matrix << std::endl;
+                  // }
+                  cell_matrix(i, j) += scalar_product(D_matrix * grad_phi_j, grad_phi_i) * fe_values.JxW(q);
+                  
+          }
 
               // Assemble the residual vector (with changed sign).
 

@@ -45,7 +45,7 @@ public:
     value(const Point<dim> & /*p*/,
           const unsigned int /*component*/ = 0) const override
     {
-      return 2.0;
+      return 1.0;
     }
   };
 
@@ -59,14 +59,7 @@ public:
       Tensor<2, dim> values;
       for (unsigned int i = 0; i < dim; ++i)
       {
-        for (unsigned int j = 0; j < dim; ++j){
-          if (i = j) {
-            values[i][j] = 0.8;
-          }
-          else{
-            values[i][j] = 0.0;
-          }
-        }
+        values[i][i] = 0.001;
       }
       // values[1][1] += 10.0;
       return values;
@@ -112,6 +105,7 @@ public:
       }
 
       return 0.0;
+      // return p[0] * (1 - p[0]) * p[1] * (1 - p[1]);
     }
   };
 
