@@ -1,5 +1,5 @@
-#ifndef FK_2D_HPP
-#define FK_2D_HPP
+#ifndef FISHER_KOLMOGOROV_HPP
+#define FISHER_KOLMOGOROV_HPP
 
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/quadrature_lib.h>
@@ -15,10 +15,7 @@
 #include <deal.II/fe/fe_values_extractors.h>
 #include <deal.II/fe/mapping_fe.h>
 
-#include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_in.h>
-#include <deal.II/grid/grid_out.h>
-#include <deal.II/grid/tria.h>
 
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/trilinos_precondition.h>
@@ -28,30 +25,22 @@
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 
-#include <deal.II/base/tensor_function.h> // AGGIUNTO
-
 #include <fstream>
 #include <iostream>
 
 using namespace dealii;
 
-// Class representing the Fisher-Kolmogorov problem.
-class FisherKolmogorov
+// Class representing the non-linear diffusion problem.
+class FisherKol
 {
 public:
-  // Physical dimension (1D, 2D, 3D).
-  static constexpr unsigned int dim = 2;
+  // Physical dimension (1D, 2D, 3D)
+  static constexpr unsigned int dim = 3; // MODIFIED
 
-  // Function for the alpha coefficient, that represents the growth of c,
-  // the relative concentration of misfolded protein.
+  // Function for the alpha coefficient.
   class FunctionAlpha : public Function<dim>
   {
   public:
-    // Constructor.
-    FunctionAlpha()
-    {}
-
-    // Evaluation.
     virtual double
     value(const Point<dim> & /*p*/,
           const unsigned int /*component*/ = 0) const override
@@ -60,76 +49,28 @@ public:
     }
   };
 
-  // Function for the D coefficient, that represents the spreading of c,
-  // the relative concentration of misfolded protein.
-  // class FunctionD : public Function<dim>
-  // {
-  // public:
-  //   // Constructor.
-  //   FunctionD()
-  //   {}
-
-  //   // Evaluation.
-  //   virtual double
-  //   value(const Point<dim> & /*p*/,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return 0.0001;
-  //   }
-  // };
-
-  // https://www.dealii.org/current/doxygen/deal.II/step_21.html
-  // https://www.dealii.org/current/doxygen/deal.II/step_61.html
-  // unit_symmetric_tensor() https://www.dealii.org/current/doxygen/deal.II/classSymmetricTensor.html#ae3f87e0ac60ba27e61941451b7185626
-  // outer_product() https://www.dealii.org/current/doxygen/deal.II/symmetric__tensor_8h.html#a548c077df22f64aae4000c382c253dce
-  class TensorFunctionD : public TensorFunction<2, dim>
+  // Function of the matrix D
+  class FunctionD
   {
   public:
-    // Constructor.
-    TensorFunctionD()
-      : TensorFunction<2, dim>()
-    {}
-
-    virtual void
-    value_list(const std::vector<Point<dim>> &points,
-               std::vector<Tensor<2, dim>> &  values) const override
+    Tensor<2, dim> matrix_value(const Point<dim> & /*p*/ /* ,
+                   Tensor<2,dim> &values */) const
     {
-      AssertDimension(points.size(), values.size());
-
-      for (unsigned int p = 0; p < points.size(); ++p)
-        {
-          values[p].clear();
-
-          // Extracellular diffusion contribution.
-          values[p] = d_ext * unit_symmetric_tensor<dim>();
-
-          // Axonal transport contribution.
-          Tensor<1, dim> n;
-          for (unsigned int d = 0; d < dim; ++d)
-            n[d] = 1.0;
-          values[p] += d_axn * outer_product(n, n);
-        }
+      Tensor<2, dim> values;
+      for (unsigned int i = 0; i < dim; ++i)
+      {
+        values[i][i] = 0.001;
+      }
+      // values[1][1] += 10.0;
+      return values;
     }
 
-  protected:
-    // Extracellular diffusion coefficient, associated with isotropic diffusion
-    // of misfolded protein through the extracellular space.
-    const double d_ext = 0.0001; // TO FIX
-
-    // Axonal transport coefficient, associated with anisotropic diffusion
-    // of misfolded protein along the local axonal direction.
-    const double d_axn = 0.0001; // TO FIX
   };
 
-  // Function for Neumann boundary condition.
-  class FunctionH : public Function<dim>
+  // Function for the forcing term.
+  class ForcingTerm : public Function<dim>
   {
   public:
-    // Constructor.
-    FunctionH()
-    {}
-
-    // Evaluation.
     virtual double
     value(const Point<dim> & /*p*/,
           const unsigned int /*component*/ = 0) const override
@@ -138,49 +79,43 @@ public:
     }
   };
 
-  // Function for the forcing term.
-  // class ForcingTerm : public Function<dim>
-  // {
-  // public:
-  //   // Constructor.
-  //   ForcingTerm()
-  //   {}
-
-  //   // Evaluation.
-  //   virtual double
-  //   value(const Point<dim> & /*p*/,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return 0.0;
-  //   }
-  // };
-
-  // Function for initial conditions.
-  class FunctionC0 : public Function<dim>
+  // Function for Dirichlet boundary conditions.
+  class FunctionG : public Function<dim>
   {
   public:
-    // Constructor.
-    FunctionC0()
-    {}
-
-    // Evaluation.
     virtual double
-    value(const Point<dim> & p,
+    value(const Point<dim> & /*p*/,
           const unsigned int /*component*/ = 0) const override
     {
-      if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45) // MODIFIED
-      {
-        return 0.1;
-      }
       return 0.0;
     }
   };
 
-  // Constructor.
-  FisherKolmogorov(const std::string  &mesh_file_name_,
-                   const unsigned int &r_,
-                   const double       &T_,
-                   const double       &deltat_)
+  // Function for initial conditions.
+  class FunctionU0 : public Function<dim>
+  {
+  public:
+    virtual double
+    value(const Point<dim> & p,
+          const unsigned int /*component*/ = 0) const override
+    {
+      // if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
+      if (p[0] < 0.05 && p[0] > -0.05 && p[1] < 0.05 && p[1] > -0.05 && p[2] < 0.05 && p[2] > -0.05)
+      {
+        return 0.1;
+      }
+
+      return 0.0;
+      // return p[0] * (1 - p[0]) * p[1] * (1 - p[1]);
+    }
+  };
+
+  // Constructor. We provide the final time, time step Delta t and theta method
+  // parameter as constructor arguments.
+  FisherKol(const std::string  &mesh_file_name_,
+                const unsigned int &r_,
+                const double       &T_,
+                const double       &deltat_)
     : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
     , mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD))
     , pcout(std::cout, mpi_rank == 0)
@@ -232,17 +167,17 @@ protected:
   // alpha coefficient.
   FunctionAlpha alpha;
 
-  // D coefficient.
-  TensorFunctionD D;
-
-  // Neumann boundary condition.
-  FunctionH function_h;
+  // matrix D.
+  FunctionD D;
 
   // Forcing term.
-  // ForcingTerm forcing_term;
+  ForcingTerm forcing_term;
+
+  // Dirichlet boundary conditions.
+  FunctionG function_g;
 
   // Initial conditions.
-  FunctionC0 c_0;
+  FunctionU0 u_0;
 
   // Current time.
   double time;
@@ -269,9 +204,6 @@ protected:
 
   // Quadrature formula.
   std::unique_ptr<Quadrature<dim>> quadrature;
-
-  // Quadrature formula on boundary lines.
-  std::unique_ptr<Quadrature<dim - 1>> quadrature_boundary;
 
   // DoF handler.
   DoFHandler<dim> dof_handler;

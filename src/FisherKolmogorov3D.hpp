@@ -1,5 +1,5 @@
-#ifndef FK_2D_HPP
-#define FK_2D_HPP
+#ifndef FK_3D_HPP
+#define FK_3D_HPP
 
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/quadrature_lib.h>
@@ -40,7 +40,7 @@ class FisherKolmogorov
 {
 public:
   // Physical dimension (1D, 2D, 3D).
-  static constexpr unsigned int dim = 2;
+  static constexpr unsigned int dim = 3;
 
   // Function for the alpha coefficient, that represents the growth of c,
   // the relative concentration of misfolded protein.
@@ -168,7 +168,7 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45) // MODIFIED
+      if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45) // MODIFIED
       {
         return 0.1;
       }
