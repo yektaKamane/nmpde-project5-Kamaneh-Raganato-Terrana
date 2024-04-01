@@ -15,7 +15,7 @@ FisherKol::setup()
     std::ifstream grid_in_file(mesh_file_name);
     grid_in.read_msh(grid_in_file);
 
-    parallel::distributed::GridTools::partition_triangulation(mpi_size, mesh_serial);
+    GridTools::partition_triangulation(mpi_size, mesh_serial);
     const auto construction_data = TriangulationDescription::Utilities::
       create_description_from_triangulation(mesh_serial, MPI_COMM_WORLD);
     mesh.create_triangulation(construction_data);
