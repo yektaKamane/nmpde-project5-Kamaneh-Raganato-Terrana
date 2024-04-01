@@ -154,7 +154,7 @@ FisherKol::assemble_system()
                   const Tensor<1, dim> &grad_phi_i = fe_values.shape_grad(i, q);
                   const Tensor<1, dim> &grad_phi_j = fe_values.shape_grad(j, q);
                   // if (i==0 && j==1){
-                  //   std::cout << grad_phi_j << ", " << grad_phi_i << std::endl;
+                  //   // std::cout << grad_phi_j << ", " << grad_phi_i << std::endl;
                   //   std::cout << D_matrix << std::endl;
                   // }
                   cell_matrix(i, j) += scalar_product(D_matrix * grad_phi_j, grad_phi_i) * fe_values.JxW(q);

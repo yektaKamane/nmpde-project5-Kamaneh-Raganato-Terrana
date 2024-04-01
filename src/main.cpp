@@ -8,10 +8,10 @@ main(int argc, char *argv[])
 
   const unsigned int degree = 1;
 
-  const double T      = 5.0;
+  const double T      = 2.0;
   const double deltat = 0.1;
 
-  FisherKol problem("../mesh/mesh-square-20.msh", degree, T, deltat);
+  FisherKol problem("../mesh/mesh-cube-20.msh", degree, T, deltat);
 
   problem.setup();
   problem.solve();

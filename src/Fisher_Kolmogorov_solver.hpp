@@ -35,7 +35,7 @@ class FisherKol
 {
 public:
   // Physical dimension (1D, 2D, 3D)
-  static constexpr unsigned int dim = 2;
+  static constexpr unsigned int dim = 3;
 
   // Function for the alpha coefficient.
   class FunctionAlpha : public Function<dim>
@@ -99,13 +99,12 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
+      if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
       {
         return 0.1;
       }
 
       return 0.0;
-      // return p[0] * (1 - p[0]) * p[1] * (1 - p[1]);
     }
   };
 
