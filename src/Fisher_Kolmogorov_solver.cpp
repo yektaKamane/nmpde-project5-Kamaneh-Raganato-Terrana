@@ -251,7 +251,7 @@ FisherKol::output(const unsigned int &time_step) const
   data_out.add_data_vector(dof_handler, solution, "u");
 
   std::vector<unsigned int> partition_int(mesh.n_active_cells());
-  DoFTools::get_subdomain_association(mesh, partition_int);
+  GridTools::get_subdomain_association(mesh, partition_int);
   const Vector<double> partitioning(partition_int.begin(), partition_int.end());
   data_out.add_data_vector(partitioning, "partitioning");
 
