@@ -31,6 +31,9 @@ CreateGeometry;
 Surface Loop(1) = Surface{:};
 Volume(1) = {1};
 
+// Create a physical group for the volume
+Physical Volume("Brain") = {1};
+
 // Specify element sizes
 funny = DefineNumber[0, Choices{0,1},
     Name "Parameters/Apply funny mesh size field?" ];
@@ -44,3 +47,4 @@ funny = DefineNumber[0, Choices{0,1},
   Background Field = 1;
 
 Save "brain-h3.0.msh";
+

@@ -51,6 +51,33 @@ FisherKol::setup()
     dof_handler.reinit(mesh);
     dof_handler.distribute_dofs(*fe);
 
+    // Set the initial conditions based on the material ID of the cells.
+    // PARTE AGGIUNTA CON COPILOT
+    // Vector<double> cell_initial_condition(fe->dofs_per_cell);
+    // for (const auto &cell : dof_handler.active_cell_iterators())
+    // {
+    //   if (cell->is_locally_owned())
+    //   {
+    //     unsigned int material_id = cell->material_id();
+    //     for (unsigned int i = 0; i < fe->dofs_per_cell; ++i)
+    //     {
+    //       Point<dim> p = cell->vertex(i);
+    //       if (material_id == 0)
+    //       {
+    //         // Set the initial condition for cells with material ID 0
+    //         cell_initial_condition[i] = (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45) ? 0.1 : 0.0;
+    //       }
+    //       else if (material_id == 1)
+    //       {
+    //         // Set the initial condition for cells with material ID 1
+    //         cell_initial_condition[i] = /* your initial condition for material ID 1 */;
+    //       }
+    //       // Add more conditions for other material IDs if necessary
+    //     }
+    //     cell->set_dof_values(cell_initial_condition, solution);
+    //   }
+    // }
+
     locally_owned_dofs = dof_handler.locally_owned_dofs();
     DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
 

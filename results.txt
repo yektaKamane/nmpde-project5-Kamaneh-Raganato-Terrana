@@ -1,0 +1,336 @@
+  Initializing the mesh
+  Number of elements = 634472
+-----------------------------------------------
+Initializing the finite element space
+  Degree                     = 1
+  DoFs per cell              = 4
+  Quadrature points per cell = 4
+-----------------------------------------------
+Initializing the DoF handler
+  Number of DoFs = 111951
+-----------------------------------------------
+Initializing the linear system
+  Initializing the sparsity pattern
+  Initializing the matrices
+  Initializing the system right-hand side
+  Initializing the solution vector
+===============================================
+Applying the initial condition
+-----------------------------------------------
+n =   1, t = 0.100000
+  Newton iteration 0/1000 - ||r|| = 3.923932e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 7.850997e-03  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 3.537631e-08 < tolerance
+
+n =   2, t = 0.200000
+  Newton iteration 0/1000 - ||r|| = 4.129546e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 8.544494e-03  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 4.119809e-08 < tolerance
+
+n =   3, t = 0.300000
+  Newton iteration 0/1000 - ||r|| = 4.330333e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 9.221973e-03  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 4.715811e-08 < tolerance
+
+n =   4, t = 0.400000
+  Newton iteration 0/1000 - ||r|| = 4.524349e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 9.868820e-03  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 5.304168e-08 < tolerance
+
+n =   5, t = 0.500000
+  Newton iteration 0/1000 - ||r|| = 4.709744e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.047033e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 5.860912e-08 < tolerance
+
+n =   6, t = 0.600000
+  Newton iteration 0/1000 - ||r|| = 4.884833e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.101246e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 6.361318e-08 < tolerance
+
+n =   7, t = 0.700000
+  Newton iteration 0/1000 - ||r|| = 5.048177e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.148259e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 6.781941e-08 < tolerance
+
+n =   8, t = 0.800000
+  Newton iteration 0/1000 - ||r|| = 5.198651e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.187034e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 7.102707e-08 < tolerance
+
+n =   9, t = 0.900000
+  Newton iteration 0/1000 - ||r|| = 5.335516e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.216820e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 7.308772e-08 < tolerance
+
+n =  10, t = 1.000000
+  Newton iteration 0/1000 - ||r|| = 5.458461e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.237210e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 7.391909e-08 < tolerance
+
+n =  11, t = 1.100000
+  Newton iteration 0/1000 - ||r|| = 5.567650e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.248183e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 7.351237e-08 < tolerance
+
+n =  12, t = 1.200000
+  Newton iteration 0/1000 - ||r|| = 5.663734e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.250123e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 7.193224e-08 < tolerance
+
+n =  13, t = 1.300000
+  Newton iteration 0/1000 - ||r|| = 5.747847e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.243817e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 6.930992e-08 < tolerance
+
+n =  14, t = 1.400000
+  Newton iteration 0/1000 - ||r|| = 5.821580e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.230444e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 6.583113e-08 < tolerance
+
+n =  15, t = 1.500000
+  Newton iteration 0/1000 - ||r|| = 5.886920e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.211539e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 6.172090e-08 < tolerance
+
+n =  16, t = 1.600000
+  Newton iteration 0/1000 - ||r|| = 5.946182e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.188945e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 5.722825e-08 < tolerance
+
+n =  17, t = 1.700000
+  Newton iteration 0/1000 - ||r|| = 6.001901e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.164748e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 5.261313e-08 < tolerance
+
+n =  18, t = 1.800000
+  Newton iteration 0/1000 - ||r|| = 6.056714e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.141198e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 4.813733e-08 < tolerance
+
+n =  19, t = 1.900000
+  Newton iteration 0/1000 - ||r|| = 6.113232e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.120600e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 4.405964e-08 < tolerance
+
+n =  20, t = 2.000000
+  Newton iteration 0/1000 - ||r|| = 6.173892e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.105182e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 4.063263e-08 < tolerance
+
+n =  21, t = 2.100000
+  Newton iteration 0/1000 - ||r|| = 6.240835e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.096934e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 3.809409e-08 < tolerance
+
+n =  22, t = 2.200000
+  Newton iteration 0/1000 - ||r|| = 6.315772e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.097439e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 3.664482e-08 < tolerance
+
+n =  23, t = 2.300000
+  Newton iteration 0/1000 - ||r|| = 6.399898e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.107726e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 3.641188e-08 < tolerance
+
+n =  24, t = 2.400000
+  Newton iteration 0/1000 - ||r|| = 6.493824e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.128173e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 3.741505e-08 < tolerance
+
+n =  25, t = 2.500000
+  Newton iteration 0/1000 - ||r|| = 6.597552e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.158503e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 3.956328e-08 < tolerance
+
+n =  26, t = 2.600000
+  Newton iteration 0/1000 - ||r|| = 6.710492e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.197857e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 4.268545e-08 < tolerance
+
+n =  27, t = 2.700000
+  Newton iteration 0/1000 - ||r|| = 6.831513e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.244932e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 4.657167e-08 < tolerance
+
+n =  28, t = 2.800000
+  Newton iteration 0/1000 - ||r|| = 6.959034e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.298144e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 5.100188e-08 < tolerance
+
+n =  29, t = 2.900000
+  Newton iteration 0/1000 - ||r|| = 7.091129e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.355786e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 5.575827e-08 < tolerance
+
+n =  30, t = 3.000000
+  Newton iteration 0/1000 - ||r|| = 7.225666e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.416172e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 6.062911e-08 < tolerance
+
+n =  31, t = 3.100000
+  Newton iteration 0/1000 - ||r|| = 7.360444e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.477754e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 6.541243e-08 < tolerance
+
+n =  32, t = 3.200000
+  Newton iteration 0/1000 - ||r|| = 7.493351e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.539235e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 6.992322e-08 < tolerance
+
+n =  33, t = 3.300000
+  Newton iteration 0/1000 - ||r|| = 7.622523e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.599673e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 7.400616e-08 < tolerance
+
+n =  34, t = 3.400000
+  Newton iteration 0/1000 - ||r|| = 7.746523e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.658603e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 7.755492e-08 < tolerance
+
+n =  35, t = 3.500000
+  Newton iteration 0/1000 - ||r|| = 7.864539e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.716179e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 8.054418e-08 < tolerance
+
+n =  36, t = 3.600000
+  Newton iteration 0/1000 - ||r|| = 7.976620e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.773382e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 8.309783e-08 < tolerance
+
+n =  37, t = 3.700000
+  Newton iteration 0/1000 - ||r|| = 8.083982e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.832336e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 8.568408e-08 < tolerance
+
+n =  38, t = 3.800000
+  Newton iteration 0/1000 - ||r|| = 8.189406e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.896833e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 8.978775e-08 < tolerance
+
+n =  39, t = 3.900000
+  Newton iteration 0/1000 - ||r|| = 8.297802e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.973273e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 1.003260e-07 < tolerance
+
+n =  40, t = 4.000000
+  Newton iteration 0/1000 - ||r|| = 8.416998e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 2.072393e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 1.330637e-07 < tolerance
+
+n =  41, t = 4.100000
+  Newton iteration 0/1000 - ||r|| = 8.558863e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 2.212615e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 2.304811e-07 < tolerance
+
+n =  42, t = 4.200000
+  Newton iteration 0/1000 - ||r|| = 8.740920e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 2.426826e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 4.989959e-07 < tolerance
+
+n =  43, t = 4.300000
+  Newton iteration 0/1000 - ||r|| = 8.988612e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 2.777150e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 1.252254e-06  23 CG iterations
+  Newton iteration 3/1000 - ||r|| = 2.398110e-14 < tolerance
+
+n =  44, t = 4.400000
+  Newton iteration 0/1000 - ||r|| = 9.338548e+00  17 CG iterations
+  Newton iteration 1/1000 - ||r|| = 3.390856e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 3.589973e-06  23 CG iterations
+  Newton iteration 3/1000 - ||r|| = 1.842776e-13 < tolerance
+
+n =  45, t = 4.500000
+  Newton iteration 0/1000 - ||r|| = 9.843368e+00  17 CG iterations
+  Newton iteration 1/1000 - ||r|| = 4.560913e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 1.211555e-05  22 CG iterations
+  Newton iteration 3/1000 - ||r|| = 2.299572e-12 < tolerance
+
+n =  46, t = 4.600000
+  Newton iteration 0/1000 - ||r|| = 1.058014e+01  17 CG iterations
+  Newton iteration 1/1000 - ||r|| = 7.076821e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 5.148690e-05  22 CG iterations
+  Newton iteration 3/1000 - ||r|| = 4.707228e-11 < tolerance
+
+n =  47, t = 4.700000
+  Newton iteration 0/1000 - ||r|| = 1.166941e+01  17 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.354679e-01  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 3.147426e-04  21 CG iterations
+  Newton iteration 3/1000 - ||r|| = 2.158809e-09 < tolerance
+
+n =  48, t = 4.800000
+  Newton iteration 0/1000 - ||r|| = 1.333789e+01  17 CG iterations
+  Newton iteration 1/1000 - ||r|| = 3.559615e-01  19 CG iterations
+  Newton iteration 2/1000 - ||r|| = 3.799490e-03  20 CG iterations
+  Newton iteration 3/1000 - ||r|| = 4.811335e-07 < tolerance
+
+n =  49, t = 4.900000
+  Newton iteration 0/1000 - ||r|| = 1.625505e+01  17 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.675826e+00  18 CG iterations
+  Newton iteration 2/1000 - ||r|| = 3.341546e-01  18 CG iterations
+  Newton iteration 3/1000 - ||r|| = 3.705287e-02  19 CG iterations
+  Newton iteration 4/1000 - ||r|| = 7.521152e-04  20 CG iterations
+  Newton iteration 5/1000 - ||r|| = 3.366717e-07 < tolerance
+
+  Initializing the mesh
+  Number of elements = 634472
+-----------------------------------------------
+Initializing the finite element space
+  Degree                     = 1
+  DoFs per cell              = 4
+  Quadrature points per cell = 4
+-----------------------------------------------
+Initializing the DoF handler
+  Number of DoFs = 111951
+-----------------------------------------------
+Initializing the linear system
+  Initializing the sparsity pattern
+  Initializing the matrices
+  Initializing the system right-hand side
+  Initializing the solution vector
+===============================================
+Applying the initial condition
+-----------------------------------------------
+n =   1, t = 0.100000
+  Newton iteration 0/1000 - ||r|| = 3.923932e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 7.850997e-03  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 3.537631e-08 < tolerance
+
+n =   2, t = 0.200000
+  Newton iteration 0/1000 - ||r|| = 4.129546e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 8.544494e-03  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 4.119809e-08 < tolerance
+
+n =   3, t = 0.300000
+  Newton iteration 0/1000 - ||r|| = 4.330333e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 9.221973e-03  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 4.715811e-08 < tolerance
+
+n =   4, t = 0.400000
+  Newton iteration 0/1000 - ||r|| = 4.524349e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 9.868820e-03  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 5.304168e-08 < tolerance
+
+n =   5, t = 0.500000
+  Newton iteration 0/1000 - ||r|| = 4.709744e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.047033e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 5.860912e-08 < tolerance
+
+n =   6, t = 0.600000
+  Newton iteration 0/1000 - ||r|| = 4.884833e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.101246e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 6.361318e-08 < tolerance
+
+n =   7, t = 0.700000
+  Newton iteration 0/1000 - ||r|| = 5.048177e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.148259e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 6.781941e-08 < tolerance
+
+n =   8, t = 0.800000
+  Newton iteration 0/1000 - ||r|| = 5.198651e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.187034e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 7.102707e-08 < tolerance
+
+n =   9, t = 0.900000
+  Newton iteration 0/1000 - ||r|| = 5.335516e+00  16 CG iterations
+  Newton iteration 1/1000 - ||r|| = 1.216820e-02  20 CG iterations
+  Newton iteration 2/1000 - ||r|| = 7.308772e-08 < tolerance

@@ -168,13 +168,38 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45) // MODIFIED
-      {
-        return 0.1;
+      const double x1 = 0.0;
+      const double y1 = 0.0;
+      const double z1 = 0.0;
+      const double r1 = 0.5;
+
+      const double distance1 = std::sqrt((p[0] - x1) * (p[0] - x1) +
+                                        (p[1] - y1) * (p[1] - y1) +
+                                        (p[2] - z1) * (p[2] - z1));
+      if (distance1 < r1) {
+        return 0.5;
       }
+
+      const double x2 = 1.0;
+      const double y2 = 1.0;
+      const double z2 = 1.0;
+      const double r2 = 0.25;
+
+      const double distance2 = std::sqrt((p[0] - x2) * (p[0] - x2) +
+                                         (p[1] - y2) * (p[1] - y2) +
+                                         (p[2] - z2) * (p[2] - z2));
+      if (distance2 < r2) {
+        return 0.8;
+      }
+
+      // if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45) // MODIFIED
+      // {
+      //   return 0.5;
+      // }
       return 0.0;
     }
   };
+
 
   // Constructor.
   FisherKolmogorov(const std::string  &mesh_file_name_,

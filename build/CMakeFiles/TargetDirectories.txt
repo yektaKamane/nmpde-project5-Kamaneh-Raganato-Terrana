@@ -1,0 +1,3 @@
+/home/jellyfish/shared-folder/nmpde-project5-Kamaneh-Raganato-Terrana/build/CMakeFiles/rebuild_cache.dir
+/home/jellyfish/shared-folder/nmpde-project5-Kamaneh-Raganato-Terrana/build/CMakeFiles/edit_cache.dir
+/home/jellyfish/shared-folder/nmpde-project5-Kamaneh-Raganato-Terrana/build/CMakeFiles/test3D_B.dir
