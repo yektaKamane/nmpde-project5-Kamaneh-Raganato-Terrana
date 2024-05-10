@@ -1,7 +1,10 @@
 #include "Fisher_Kolmogorov_solver.hpp"
 
-void
-FisherKol::setup()
+template class FisherKol<2>;
+template class FisherKol<3>;
+
+template <int dim>
+void FisherKol<dim>::setup()
 {
   // Create the mesh.
   {
@@ -83,9 +86,9 @@ FisherKol::setup()
     solution_old = solution;
   }
 }
-
-void
-FisherKol::assemble_system()
+ 
+template <int dim>
+void FisherKol<dim>::assemble_system()
 {
   const unsigned int dofs_per_cell = fe->dofs_per_cell;
   const unsigned int n_q           = quadrature->size();
@@ -194,8 +197,8 @@ FisherKol::assemble_system()
 
 }
 
-void
-FisherKol::solve_linear_system()
+template <int dim>
+void FisherKol<dim>::solve_linear_system()
 {
   SolverControl solver_control(100000, 1e-12 * residual_vector.l2_norm());
 
@@ -208,8 +211,8 @@ FisherKol::solve_linear_system()
   pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;
 }
 
-void
-FisherKol::solve_newton()
+template <int dim>
+void FisherKol<dim>::solve_newton()
 {
   const unsigned int n_max_iters        = 1000;
   const double       residual_tolerance = 1e-6;
@@ -244,8 +247,8 @@ FisherKol::solve_newton()
     }
 }
 
-void
-FisherKol::output(const unsigned int &time_step) const
+template <int dim>
+void FisherKol<dim>::output(const unsigned int &time_step) const
 {
   DataOut<dim> data_out;
   data_out.add_data_vector(dof_handler, solution, "u");
@@ -261,8 +264,8 @@ FisherKol::output(const unsigned int &time_step) const
     "./", "output", time_step, MPI_COMM_WORLD, 3);
 }
 
-void
-FisherKol::solve()
+template <int dim>
+void FisherKol<dim>::solve()
 {
   pcout << "===============================================" << std::endl;
 
@@ -301,4 +304,29 @@ FisherKol::solve()
 
       pcout << std::endl;
     }
+}
+
+template <int dim>
+double FisherKol<dim>::compute_error(const VectorTools::NormType &norm_type)
+{
+  FE_SimplexP<dim> fe_linear(1);
+  MappingFE mapping(fe_linear);
+
+  const QGaussSimplex<dim> quadrature_error = QGaussSimplex<dim>(r + 2);
+
+  exact_solution.set_time(time);
+
+  Vector<double> error_per_cell;
+  VectorTools::integrate_difference(mapping,
+                                    dof_handler,
+                                    solution,
+                                    exact_solution,
+                                    error_per_cell,
+                                    quadrature_error,
+                                    norm_type);
+
+  const double error =
+      VectorTools::compute_global_error(mesh, error_per_cell, norm_type);
+
+  return error;
 }

@@ -27,17 +27,20 @@
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 
+#include <deal.II/base/parameter_handler.h>
+
 #include <fstream>
 #include <iostream>
 
 using namespace dealii;
 
 // Class representing the non-linear diffusion problem.
+template <int dim>
 class FisherKol
 {
 public:
   // Physical dimension (1D, 2D, 3D)
-  static constexpr unsigned int dim = 3;
+  // static constexpr unsigned int dim = 2;
 
   // Function for the alpha coefficient.
   class FunctionAlpha : public Function<dim>
@@ -47,7 +50,10 @@ public:
     value(const Point<dim> & /*p*/,
           const unsigned int /*component*/ = 0) const override
     {
-      return 2.0;
+      // double v = parameters.p_alpha;
+      return 1.0;
+      
+      // return v;
     }
   };
 
@@ -61,6 +67,7 @@ public:
       Tensor<2, dim> values;
       for (unsigned int i = 0; i < dim; ++i)
       {
+        // double temp = parameters.p_alpha;
         values[i][i] = 0.001;
       }
       // values[1][1] += 10.0;
@@ -101,19 +108,100 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      // if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
-      // {
-      //   return 0.1;
-      // }
-
-      if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 && p[2] < 50.0 && p[2] > 40.0)
+      if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
       {
-        return 0.3;
+        return 0.1;
       }
+
+      // if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 && p[2] < 50.0 && p[2] > 40.0)
+      // {
+      //   return 0.95;
+      // }
 
       return 0.0;
       // return (p[0]*p[1]*p[2]/100);
     }
+  };
+
+   // Exact solution
+  class ExactSolution : public Function<dim>
+  {
+  public:
+    virtual double
+    value(const Point<dim> &p,
+          const unsigned int /*component*/ = 0) const override
+    {
+      double temp_val = std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]);
+      if (dim == 2) 
+        return (temp_val + 2) * std::exp(-this->get_time());
+
+      if (dim == 3)
+        return (temp_val * std::cos(M_PI * p[2])) * std::exp(-this->get_time());
+
+      else return 0.0;
+      
+    }
+
+    virtual Tensor<1, dim>
+    gradient(const Point<dim> &p,
+             const unsigned int /*component*/ = 0) const override
+    {
+      Tensor<1, dim> result;
+
+      if (dim == 2)
+      {
+        result[0] = -M_PI * std::sin(M_PI * p[0]) * std::cos(M_PI * p[1]) *
+                    std::exp(-this->get_time());
+        result[1] = -M_PI * std::cos(M_PI * p[0]) * std::sin(M_PI * p[1]) *
+                    std::exp(-this->get_time());
+      }
+      
+      if (dim == 3)
+      {
+        result[0] = -M_PI * std::sin(M_PI * p[0]) * std::cos(M_PI * p[1]) *
+                    std::cos(M_PI * p[2]) * std::exp(-this->get_time());
+        result[1] = -M_PI * std::sin(M_PI * p[1]) * std::cos(M_PI * p[0]) *
+                    std::cos(M_PI * p[2]) * std::exp(-this->get_time());
+        result[2] = -M_PI * std::sin(M_PI * p[2]) * std::cos(M_PI * p[0]) *
+                    std::cos(M_PI * p[1]) * std::exp(-this->get_time());
+      }
+
+      return result;
+    }
+  };  
+
+
+  class Parameters
+  {
+    public:
+        Parameters()
+        : p_alpha(1.0)
+        , p_beta(2.0)
+        {}
+
+    static void declare_parameters(ParameterHandler &prm)
+    {
+      prm.declare_entry("Coeff",
+                        "2.0",
+                        Patterns::Double(),
+                        "dummy");
+
+      prm.declare_entry("Coeff2",
+                        "4.0",
+                        Patterns::Double(),
+                        "dummy2");
+    }
+    void        get_parameters(ParameterHandler &prm)
+    {
+      p_alpha = prm.get_double("Coeff");
+      p_beta  = prm.get_double("Coeff2");
+
+      std::cout << "alpha: " << p_alpha << std::endl;
+      std::cout << "beta: " << p_beta << std::endl;
+    }
+
+    double p_alpha;
+    double p_beta;
   };
 
   // Constructor. We provide the final time, time step Delta t and theta method
@@ -157,6 +245,10 @@ protected:
   void
   output(const unsigned int &time_step) const;
 
+  // Compute the error for convergence analysis.
+  double
+  compute_error(const VectorTools::NormType &norm_type);
+
   // MPI parallel. /////////////////////////////////////////////////////////////
 
   // Number of MPI processes.
@@ -185,6 +277,9 @@ protected:
   // Initial conditions.
   FunctionU0 u_0;
 
+  // Exact solution.
+  ExactSolution exact_solution;
+
   // Current time.
   double time;
 
@@ -201,6 +296,8 @@ protected:
 
   // Time step.
   const double deltat;
+
+  static const Parameters &parameters;
 
   // Mesh.
   parallel::fullydistributed::Triangulation<dim> mesh;
