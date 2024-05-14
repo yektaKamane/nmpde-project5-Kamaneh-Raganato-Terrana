@@ -113,8 +113,6 @@ void FisherKol<dim>::assemble_system()
   // Value of the solution at previous timestep (un) on current cell.
   std::vector<double> solution_old_loc(n_q);
 
-  forcing_term.set_time(time);
-
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
       if (!cell->is_locally_owned())
@@ -132,8 +130,15 @@ void FisherKol<dim>::assemble_system()
       for (unsigned int q = 0; q < n_q; ++q)
         {
           // Evaluate coefficients on this quadrature node.
-          const double alpha_loc = alpha.value(fe_values.quadrature_point(q));
-           const Tensor<2, dim> D_matrix = D.matrix_value(fe_values.quadrature_point(q));
+          // const double alpha_loc = alpha.value(fe_values.quadrature_point(q));
+          const double alpha_loc = parameters.get_double("Coeff");
+          // const Tensor<2, dim> D_matrix = D.matrix_value(fe_values.quadrature_point(q));
+          Tensor<2, dim> D_matrix;
+          for (unsigned int i = 0; i < dim; ++i)
+          {
+            // double temp = parameters.p_alpha;
+            D_matrix[i][i] = 0.001;
+          }
 
           for (unsigned int i = 0; i < dofs_per_cell; ++i)
             {

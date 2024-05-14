@@ -22,7 +22,7 @@ main(int argc, char *argv[])
 
   // FisherKol problem("../mesh/mesh-cube-20.msh", degree, T, deltat);
   // FisherKol problem("../mesh/brain-h3.0.msh", degree, T, deltat);
-  FisherKol<dim> problem("../mesh/mesh-square-40.msh", degree, T, deltat);
+  FisherKol<dim> problem("../mesh/mesh-square-40.msh", degree, T, deltat, "../input/test1.prm");
 
   problem.setup();
   problem.solve();

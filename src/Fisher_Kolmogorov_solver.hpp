@@ -39,23 +39,6 @@ template <int dim>
 class FisherKol
 {
 public:
-  // Physical dimension (1D, 2D, 3D)
-  // static constexpr unsigned int dim = 2;
-
-  // Function for the alpha coefficient.
-  class FunctionAlpha : public Function<dim>
-  {
-  public:
-    virtual double
-    value(const Point<dim> & /*p*/,
-          const unsigned int /*component*/ = 0) const override
-    {
-      // double v = parameters.p_alpha;
-      return 1.0;
-      
-      // return v;
-    }
-  };
 
   // Function of the matrix D
   class FunctionD
@@ -74,30 +57,6 @@ public:
       return values;
     }
 
-  };
-
-  // Function for the forcing term.
-  class ForcingTerm : public Function<dim>
-  {
-  public:
-    virtual double
-    value(const Point<dim> & /*p*/,
-          const unsigned int /*component*/ = 0) const override
-    {
-      return 0.0;
-    }
-  };
-
-  // Function for Dirichlet boundary conditions.
-  class FunctionG : public Function<dim>
-  {
-  public:
-    virtual double
-    value(const Point<dim> & /*p*/,
-          const unsigned int /*component*/ = 0) const override
-    {
-      return 0.0;
-    }
   };
 
   // Function for initial conditions.
@@ -168,40 +127,6 @@ public:
 
       return result;
     }
-  };  
-
-
-  class Parameters
-  {
-    public:
-        Parameters()
-        : p_alpha(1.0)
-        , p_beta(2.0)
-        {}
-
-    static void declare_parameters(ParameterHandler &prm)
-    {
-      prm.declare_entry("Coeff",
-                        "2.0",
-                        Patterns::Double(),
-                        "dummy");
-
-      prm.declare_entry("Coeff2",
-                        "4.0",
-                        Patterns::Double(),
-                        "dummy2");
-    }
-    void        get_parameters(ParameterHandler &prm)
-    {
-      p_alpha = prm.get_double("Coeff");
-      p_beta  = prm.get_double("Coeff2");
-
-      std::cout << "alpha: " << p_alpha << std::endl;
-      std::cout << "beta: " << p_beta << std::endl;
-    }
-
-    double p_alpha;
-    double p_beta;
   };
 
   // Constructor. We provide the final time, time step Delta t and theta method
@@ -209,7 +134,8 @@ public:
   FisherKol(const std::string  &mesh_file_name_,
                 const unsigned int &r_,
                 const double       &T_,
-                const double       &deltat_)
+                const double       &deltat_,
+                const std::string  &prm_file_)
     : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
     , mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD))
     , pcout(std::cout, mpi_rank == 0)
@@ -217,8 +143,21 @@ public:
     , mesh_file_name(mesh_file_name_)
     , r(r_)
     , deltat(deltat_)
+    , prm_file(prm_file_)
     , mesh(MPI_COMM_WORLD)
-  {}
+  {
+      parameters.declare_entry("Coeff",
+                        "2.0",
+                        Patterns::Double(),
+                        "dummy");
+
+      parameters.declare_entry("Coeff2",
+                        "4.0",
+                        Patterns::Double(),
+                        "dummy2");
+
+      parameters.parse_input(prm_file);
+  }
 
   // Initialization.
   void
@@ -262,17 +201,8 @@ protected:
 
   // Problem definition. ///////////////////////////////////////////////////////
 
-  // alpha coefficient.
-  FunctionAlpha alpha;
-
   // matrix D.
   FunctionD D;
-
-  // Forcing term.
-  ForcingTerm forcing_term;
-
-  // Dirichlet boundary conditions.
-  FunctionG function_g;
 
   // Initial conditions.
   FunctionU0 u_0;
@@ -297,7 +227,9 @@ protected:
   // Time step.
   const double deltat;
 
-  static const Parameters &parameters;
+  const std::string prm_file;
+
+  ParameterHandler parameters;
 
   // Mesh.
   parallel::fullydistributed::Triangulation<dim> mesh;
