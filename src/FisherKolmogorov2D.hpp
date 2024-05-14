@@ -138,22 +138,23 @@ public:
     }
   };
 
+  // TENERE o BUTTAR VIA?
   // Function for the forcing term.
-  // class ForcingTerm : public Function<dim>
-  // {
-  // public:
-  //   // Constructor.
-  //   ForcingTerm()
-  //   {}
+  class ForcingTerm : public Function<dim>
+  {
+  public:
+    // Constructor.
+    ForcingTerm()
+    {}
 
-  //   // Evaluation.
-  //   virtual double
-  //   value(const Point<dim> & /*p*/,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return 0.0;
-  //   }
-  // };
+    // Evaluation.
+    virtual double
+    value(const Point<dim> & /*p*/,
+          const unsigned int /*component*/ = 0) const override
+    {
+      return 0.0;
+    }
+  };
 
   // Function for initial conditions.
   class FunctionC0 : public Function<dim>
@@ -168,11 +169,38 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45) // MODIFIED
+      if (p[0] < 80.0 && p[0] > 75.0 && p[1] < 80.0 && p[1] > 75.0)
       {
-        return 0.1;
+        return 0.8;
       }
       return 0.0;
+    }
+  };
+
+  // Exact solution.
+  class ExactSolution : public Function<dim>
+  {
+  public:
+    virtual double
+    value(const Point<dim> &p,
+          const unsigned int /*component*/ = 0) const override
+    {
+      return (std::cos(M_PI*p[0]) * std::cos(M_PI*p[1]) + 2) * std::exp(-get_time());
+    }
+
+    virtual Tensor<1, dim>
+    gradient(const Point<dim> &p,
+             const unsigned int /*component*/ = 0) const override
+    {
+      Tensor<1, dim> result;
+
+      // duex / dx
+      result[0] = -M_PI * std::sin(M_PI * p[0]) * std::cos(M_PI * p[1]) * std::exp(-get_time());
+
+      // duex / dy
+      result[1] = -M_PI * std::cos(M_PI * p[0]) * std::sin(M_PI * p[1]) * std::exp(-get_time());
+
+      return result;
     }
   };
 
@@ -198,6 +226,10 @@ public:
   // Solve the problem.
   void
   solve();
+
+  // Compute the error.
+  double
+  compute_error(const VectorTools::NormType &norm_type);
 
 protected:
   // Assemble the tangent problem.
@@ -243,6 +275,9 @@ protected:
 
   // Initial conditions.
   FunctionC0 c_0;
+
+  // Exact solution.
+  ExactSolution exact_solution;
 
   // Current time.
   double time;

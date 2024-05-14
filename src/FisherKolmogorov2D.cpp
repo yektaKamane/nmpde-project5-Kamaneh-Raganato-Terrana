@@ -167,7 +167,7 @@ FisherKolmogorov::assemble_system()
                                        fe_values.JxW(q);
 
                   // Stiffness matrix, third term.
-                  cell_matrix(i, j) += alpha_loc *
+                  cell_matrix(i, j) -= alpha_loc *
                                        (1.0 - 2.0 * solution_loc[q]) *
                                        fe_values.shape_value(i, q) *
                                        fe_values.shape_value(j, q) *
@@ -187,7 +187,7 @@ FisherKolmogorov::assemble_system()
                                   fe_values.JxW(q);
 
               // Non linear term.
-              cell_residual(i) -= alpha_loc * 
+              cell_residual(i) += alpha_loc * 
                                   solution_loc[q] * (1.0 - solution_loc[q]) *
                                   fe_values.shape_value(i, q) * fe_values.JxW(q);                    
 
@@ -270,7 +270,7 @@ void
 FisherKolmogorov::solve_newton()
 {
   const unsigned int n_max_iters        = 1000;
-  const double       residual_tolerance = 1e-14;
+  const double       residual_tolerance = 1e-6;
 
   unsigned int n_iter        = 0;
   double       residual_norm = residual_tolerance + 1;
@@ -394,4 +394,29 @@ FisherKolmogorov::solve()
 
       pcout << std::endl;
     }
+}
+
+double 
+FisherKolmogorov::compute_error(const VectorTools::NormType &norm_type)
+{
+  FE_SimplexP<dim> fe_linear(1);
+  MappingFE        mapping(fe_linear);
+
+  const QGaussSimplex<dim> quadrature_error = QGaussSimplex<dim>(r + 2);
+
+  exact_solution.set_time(time);
+
+  Vector<double> error_per_cell;
+  VectorTools::integrate_difference(mapping,
+                                    dof_handler,
+                                    solution,
+                                    exact_solution,
+                                    error_per_cell,
+                                    quadrature_error,
+                                    norm_type);
+
+  const double error =
+    VectorTools::compute_global_error(mesh, error_per_cell, norm_type);
+
+  return error;
 }
