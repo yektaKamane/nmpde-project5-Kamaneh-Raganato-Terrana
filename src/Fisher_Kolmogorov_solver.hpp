@@ -40,17 +40,33 @@ class FisherKol
 {
 public:
 
+  // Function of the fiber field
+  class FunctionN
+  {
+  public:
+    Tensor<2, dim>
+    circumferential(const Point<dim> & p) const
+    {
+      Tensor<2, dim> values;
+      for (unsigned int i = 0; i < dim; ++i)
+      {
+        values[i][i] = 0.0;
+      }
+      return values;
+    }
+
+  };
+
   // Function of the matrix D
   class FunctionD
   {
   public:
-    Tensor<2, dim> matrix_value(const Point<dim> & /*p*/ /* ,
+    Tensor<2, dim> matrix_value(const Point<dim> & /*p ,
                    Tensor<2,dim> &values */) const
     {
       Tensor<2, dim> values;
       for (unsigned int i = 0; i < dim; ++i)
       {
-        // double temp = parameters.p_alpha;
         values[i][i] = 0.001;
       }
       // values[1][1] += 10.0;
@@ -67,18 +83,17 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
-      {
-        return 0.1;
+      if (dim == 2){
+        if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
+          return 0.1;
       }
 
-      // if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 && p[2] < 50.0 && p[2] > 40.0)
-      // {
-      //   return 0.95;
-      // }
+      if (dim == 3){
+        if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 && p[2] < 50.0 && p[2] > 40.0)
+          return 0.95;
+      }
 
       return 0.0;
-      // return (p[0]*p[1]*p[2]/100);
     }
   };
 
@@ -146,15 +161,10 @@ public:
     , prm_file(prm_file_)
     , mesh(MPI_COMM_WORLD)
   {
-      parameters.declare_entry("Coeff",
-                        "2.0",
-                        Patterns::Double(),
-                        "dummy");
-
-      parameters.declare_entry("Coeff2",
-                        "4.0",
-                        Patterns::Double(),
-                        "dummy2");
+      parameters.declare_entry("coef_alpha", "1.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("coef_dext", "1.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("coef_daxn", "1.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("fib", "0", Patterns::Integer(), "dummy");
 
       parameters.parse_input(prm_file);
   }
@@ -166,6 +176,10 @@ public:
   // Solve the problem.
   void
   solve();
+
+  // Compute the error for convergence analysis.
+  double
+  compute_error(const VectorTools::NormType &norm_type);
 
 protected:
   // Assemble the tangent problem.
@@ -184,9 +198,6 @@ protected:
   void
   output(const unsigned int &time_step) const;
 
-  // Compute the error for convergence analysis.
-  double
-  compute_error(const VectorTools::NormType &norm_type);
 
   // MPI parallel. /////////////////////////////////////////////////////////////
 
@@ -200,6 +211,8 @@ protected:
   ConditionalOStream pcout;
 
   // Problem definition. ///////////////////////////////////////////////////////
+
+  FunctionN fiber;
 
   // matrix D.
   FunctionD D;

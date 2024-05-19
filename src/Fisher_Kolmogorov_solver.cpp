@@ -113,6 +113,16 @@ void FisherKol<dim>::assemble_system()
   // Value of the solution at previous timestep (un) on current cell.
   std::vector<double> solution_old_loc(n_q);
 
+  // The coefficients are constant throughout the program
+  const double alpha = parameters.get_double("coef_alpha");
+  const double d_ext = parameters.get_double("coef_dext");
+  const double d_axn = parameters.get_double("coef_daxn");
+
+  Tensor<2, dim> D_matrix;
+  for (unsigned int i = 0; i < dim; ++i){
+    D_matrix[i][i] = d_ext;
+  }
+
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
       if (!cell->is_locally_owned())
@@ -129,16 +139,9 @@ void FisherKol<dim>::assemble_system()
 
       for (unsigned int q = 0; q < n_q; ++q)
         {
-          // Evaluate coefficients on this quadrature node.
-          // const double alpha_loc = alpha.value(fe_values.quadrature_point(q));
-          const double alpha_loc = parameters.get_double("Coeff");
-          // const Tensor<2, dim> D_matrix = D.matrix_value(fe_values.quadrature_point(q));
-          Tensor<2, dim> D_matrix;
-          for (unsigned int i = 0; i < dim; ++i)
-          {
-            // double temp = parameters.p_alpha;
-            D_matrix[i][i] = 0.001;
-          }
+          Tensor<2, dim> temp = fiber.circumferential(fe_values.quadrature_point(q));
+
+          D_matrix += d_axn * temp;
 
           for (unsigned int i = 0; i < dofs_per_cell; ++i)
             {
@@ -148,12 +151,12 @@ void FisherKol<dim>::assemble_system()
                                fe_values.shape_value(j, q) / deltat *
                                fe_values.JxW(q);
 
-                  cell_matrix(i, j) -= alpha_loc *
+                  cell_matrix(i, j) -= alpha *
                                       fe_values.shape_value(j, q) *
                                       fe_values.shape_value(i, q) *
                                       fe_values.JxW(q);
 
-                  cell_matrix(i, j) += 2.0 * alpha_loc *
+                  cell_matrix(i, j) += 2.0 * alpha *
                                       solution_loc[q] *
                                       fe_values.shape_value(j, q) *
                                       fe_values.shape_value(i, q) *
@@ -161,10 +164,7 @@ void FisherKol<dim>::assemble_system()
 
                   const Tensor<1, dim> &grad_phi_i = fe_values.shape_grad(i, q);
                   const Tensor<1, dim> &grad_phi_j = fe_values.shape_grad(j, q);
-                  // if (i==0 && j==1){
-                  //   // std::cout << grad_phi_j << ", " << grad_phi_i << std::endl;
-                  //   std::cout << D_matrix << std::endl;
-                  // }
+
                   cell_matrix(i, j) += scalar_product(D_matrix * grad_phi_j, grad_phi_i) * fe_values.JxW(q);
                   
           }
@@ -183,7 +183,7 @@ void FisherKol<dim>::assemble_system()
                     fe_values.JxW(q);
 
               // second term.
-              cell_residual(i) += alpha_loc *
+              cell_residual(i) += alpha *
                                   solution_loc[q] *
                                   (1.0 - solution_loc[q]) *
                                   fe_values.shape_value(i, q) * 
@@ -205,7 +205,7 @@ void FisherKol<dim>::assemble_system()
 template <int dim>
 void FisherKol<dim>::solve_linear_system()
 {
-  SolverControl solver_control(100000, 1e-12 * residual_vector.l2_norm());
+  SolverControl solver_control(10000, 1e-12 * residual_vector.l2_norm());
 
   SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
   TrilinosWrappers::PreconditionSSOR      preconditioner;

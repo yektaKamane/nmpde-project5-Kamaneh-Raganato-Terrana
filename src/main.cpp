@@ -1,3 +1,9 @@
+#include <deal.II/base/convergence_table.h>
+
+#include <fstream>
+#include <iostream>
+#include <vector>
+
 #include "Fisher_Kolmogorov_solver.hpp"
 
 // Main function.
@@ -14,14 +20,6 @@ main(int argc, char *argv[])
   const double deltat = 0.1;
   const unsigned int dim = 2;
 
-  // ParameterHandler parameter_handler;
-  // FisherKol::Parameters parameters;
-  // parameters.declare_parameters(parameter_handler);
-  // parameter_handler.parse_input("../input/test1.prm");
-  // parameters.get_parameters(parameter_handler);
-
-  // FisherKol problem("../mesh/mesh-cube-20.msh", degree, T, deltat);
-  // FisherKol problem("../mesh/brain-h3.0.msh", degree, T, deltat);
   FisherKol<dim> problem("../mesh/mesh-square-40.msh", degree, T, deltat, "../input/test1.prm");
 
   problem.setup();
