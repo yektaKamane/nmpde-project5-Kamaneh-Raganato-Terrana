@@ -45,7 +45,7 @@ public:
   {
   public:
     Tensor<2, dim>
-    circumferential(const Point<dim> & p) const
+    isotropic(const Point<dim> & /*p*/) const
     {
       Tensor<2, dim> values;
       for (unsigned int i = 0; i < dim; ++i)

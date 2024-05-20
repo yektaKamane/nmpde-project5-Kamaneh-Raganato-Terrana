@@ -139,7 +139,7 @@ void FisherKol<dim>::assemble_system()
 
       for (unsigned int q = 0; q < n_q; ++q)
         {
-          Tensor<2, dim> temp = fiber.circumferential(fe_values.quadrature_point(q));
+          Tensor<2, dim> temp = fiber.isotropic(fe_values.quadrature_point(q));
 
           D_matrix += d_axn * temp;
 
@@ -213,7 +213,7 @@ void FisherKol<dim>::solve_linear_system()
     jacobian_matrix, TrilinosWrappers::PreconditionSSOR::AdditionalData(1.0));
 
   solver.solve(jacobian_matrix, delta_owned, residual_vector, preconditioner);
-  pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;
+  // pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;
 }
 
 template <int dim>
@@ -230,9 +230,9 @@ void FisherKol<dim>::solve_newton()
       assemble_system();
       residual_norm = residual_vector.l2_norm();
 
-      pcout << "  Newton iteration " << n_iter << "/" << n_max_iters
-            << " - ||r|| = " << std::scientific << std::setprecision(6)
-            << residual_norm << std::flush;
+      // pcout << "  Newton iteration " << n_iter << "/" << n_max_iters
+      //       << " - ||r|| = " << std::scientific << std::setprecision(6)
+      //       << residual_norm << std::flush;
 
       // We actually solve the system only if the residual is larger than the
       // tolerance.
@@ -245,7 +245,7 @@ void FisherKol<dim>::solve_newton()
         }
       else
         {
-          pcout << " < tolerance" << std::endl;
+          // pcout << " < tolerance" << std::endl;
         }
 
       ++n_iter;
@@ -298,8 +298,8 @@ void FisherKol<dim>::solve()
       // Store the old solution, so that it is available for assembly.
       solution_old = solution;
 
-      pcout << "n = " << std::setw(3) << time_step << ", t = " << std::setw(5)
-            << std::fixed << time << std::endl;
+      // pcout << "n = " << std::setw(3) << time_step << ", t = " << std::setw(5)
+      //       << std::fixed << time << std::endl;
 
       // At every time step, we invoke Newton's method to solve the non-linear
       // problem.
@@ -307,7 +307,7 @@ void FisherKol<dim>::solve()
 
       output(time_step);
 
-      pcout << std::endl;
+      // pcout << std::endl;
     }
 }
 
