@@ -1,0 +1,21 @@
+#!/bin/bash
+#PBS -S /bin/bash
+
+#PBS -l nodes=1:ppn=20,walltime=12:00:00 -q gigat
+#PBS -N job1
+
+source ~/.bashrc
+
+# Load the modules that you need:
+module load gcc-glibc/11
+module load dealii
+
+cd /u/par5/myFiles/nmpde-project5-Kamaneh-Raganato-Terrana/build
+
+# Create the machinefile to be passed to mpirun.
+sort ${PBS_NODEFILE} | uniq -c | awk '{printf("%s\n", $2);}' > mpd.nodes
+
+# Actually run the simulation. The arguments to -n and -npernode should
+# be consistent with the resources requested at the top of the script.
+mpirun -machinefile mpd.nodes -n 20 -npernode 20 \
+solver  &> stdout.txt
