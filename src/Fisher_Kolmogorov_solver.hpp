@@ -57,24 +57,6 @@ public:
 
   };
 
-  // Function of the matrix D
-  class FunctionD
-  {
-  public:
-    Tensor<2, dim> matrix_value(const Point<dim> & /*p ,
-                   Tensor<2,dim> &values */) const
-    {
-      Tensor<2, dim> values;
-      for (unsigned int i = 0; i < dim; ++i)
-      {
-        values[i][i] = 0.001;
-      }
-      // values[1][1] += 10.0;
-      return values;
-    }
-
-  };
-
   // Function for initial conditions.
   class FunctionU0 : public Function<dim>
   {
@@ -213,9 +195,6 @@ protected:
   // Problem definition. ///////////////////////////////////////////////////////
 
   FunctionN fiber;
-
-  // matrix D.
-  FunctionD D;
 
   // Initial conditions.
   FunctionU0 u_0;
