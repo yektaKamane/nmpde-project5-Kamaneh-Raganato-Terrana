@@ -208,28 +208,28 @@ void FisherKol<dim>::assemble_system()
 
       // If the cell is adjacent to the boundary we loop over its edges
       // (referred to as faces in the deal.II jargon).
-      if (cell->at_boundary())
-        {
-          for (unsigned int face_number = 0; face_number < cell->n_faces();
-               ++face_number)
-            {
-              // If current face lies on the boundary, and its boundary ID (or
-              // tag) is that of one of the Neumann boundaries, we assemble the
-              // boundary integral.
-              if (cell->face(face_number)->at_boundary() &&
-                  (cell->face(face_number)->boundary_id() == 0 ||
-                   cell->face(face_number)->boundary_id() == 1))
-                {
-                  fe_values_boundary.reinit(cell, face_number);
+      // if (cell->at_boundary())
+      //   {
+      //     for (unsigned int face_number = 0; face_number < cell->n_faces();
+      //          ++face_number)
+      //       {
+      //         // If current face lies on the boundary, and its boundary ID (or
+      //         // tag) is that of one of the Neumann boundaries, we assemble the
+      //         // boundary integral.
+      //         if (cell->face(face_number)->at_boundary() &&
+      //             (cell->face(face_number)->boundary_id() == 0 ||
+      //              cell->face(face_number)->boundary_id() == 1))
+      //           {
+      //             fe_values_boundary.reinit(cell, face_number);
 
-                  for (unsigned int q = 0; q < quadrature_boundary->size(); ++q)
-                    for (unsigned int i = 0; i < dofs_per_cell; ++i)
-                      cell_residual(i) -= function_h.value(fe_values_boundary.quadrature_point(q)) * // h(xq)
-                                          fe_values_boundary.shape_value(i, q) *                     // v(xq)
-                                          fe_values_boundary.JxW(q);                                 // Jq wq
-                }
-            }
-        }
+      //             for (unsigned int q = 0; q < quadrature_boundary->size(); ++q)
+      //               for (unsigned int i = 0; i < dofs_per_cell; ++i)
+      //                 cell_residual(i) -= function_h.value(fe_values_boundary.quadrature_point(q)) * // h(xq)
+      //                                     fe_values_boundary.shape_value(i, q) *                     // v(xq)
+      //                                     fe_values_boundary.JxW(q);                                 // Jq wq
+      //           }
+      //       }
+      //   }
 
       cell->get_dof_indices(dof_indices);
 
@@ -247,8 +247,10 @@ void FisherKol<dim>::assemble_system()
     std::map<types::boundary_id, const Function<dim> *> boundary_functions;
     // Functions::ZeroFunction<dim>                        zero_function;
 
-    boundary_functions[2] = &function_g;
-    boundary_functions[3] = &function_g;
+    boundary_functions[0] = &function_g0;
+    boundary_functions[1] = &function_g1;
+    boundary_functions[2] = &function_g2;
+    boundary_functions[3] = &function_g3;
 
     VectorTools::interpolate_boundary_values(dof_handler,
                                              boundary_functions,
@@ -265,9 +267,9 @@ void FisherKol<dim>::solve_linear_system()
   SolverControl solver_control(10000, 1e-12 * residual_vector.l2_norm());
 
   SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
-  TrilinosWrappers::PreconditionSSOR      preconditioner;
+  TrilinosWrappers::PreconditionAMG        preconditioner;
   preconditioner.initialize(
-    jacobian_matrix, TrilinosWrappers::PreconditionSSOR::AdditionalData(1.0));
+    jacobian_matrix, TrilinosWrappers::PreconditionAMG::AdditionalData(1.0));
 
   solver.solve(jacobian_matrix, delta_owned, residual_vector, preconditioner);
   pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;
@@ -277,7 +279,7 @@ template <int dim>
 void FisherKol<dim>::solve_newton()
 {
   const unsigned int n_max_iters        = 1000;
-  const double       residual_tolerance = 1e-6;
+  const double       residual_tolerance = 1e-3;
 
   unsigned int n_iter        = 0;
   double       residual_norm = residual_tolerance + 1;
@@ -299,21 +301,21 @@ void FisherKol<dim>::solve_newton()
     solution_owned.compress(VectorOperation::insert);
     solution = solution_owned;
   }
-  {
-    IndexSet neumann_dofs = DoFTools::extract_boundary_dofs(dof_handler);
-    neumann_dofs          = neumann_dofs & dof_handler.locally_owned_dofs();
+  // {
+  //   IndexSet neumann_dofs = DoFTools::extract_boundary_dofs(dof_handler);
+  //   neumann_dofs          = neumann_dofs & dof_handler.locally_owned_dofs();
 
-    function_h.set_time(time);
+  //   function_h.set_time(time);
 
-    TrilinosWrappers::MPI::Vector vector_neumann(solution_owned);
-    VectorTools::interpolate(dof_handler, function_h, vector_neumann);
+  //   TrilinosWrappers::MPI::Vector vector_neumann(solution_owned);
+  //   VectorTools::interpolate(dof_handler, function_h, vector_neumann);
 
-    for (const auto &idx : neumann_dofs)
-      solution_owned[idx] = vector_neumann[idx];
+  //   for (const auto &idx : neumann_dofs)
+  //     solution_owned[idx] = vector_neumann[idx];
 
-    solution_owned.compress(VectorOperation::insert);
-    solution = solution_owned;
-  }
+  //   solution_owned.compress(VectorOperation::insert);
+  //   solution = solution_owned;
+  // }
 
   while (n_iter < n_max_iters && residual_norm > residual_tolerance)
     {

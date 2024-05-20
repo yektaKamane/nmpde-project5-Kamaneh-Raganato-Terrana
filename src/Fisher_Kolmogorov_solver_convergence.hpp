@@ -23,8 +23,11 @@
 #include <deal.II/distributed/grid_refinement.h>
 
 #include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/solver_gmres.h> // ...
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
+
+// #include <deal.II/multigrid/multigrid.h> // ...
 
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/matrix_tools.h>
@@ -93,10 +96,18 @@ public:
   {
   public:
     virtual double
-    value(const Point<dim> & /*p*/,
+    value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      return 0.0;
+      double temp_val = std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]);
+      if (dim == 2) 
+        return ((2 * M_PI - 1) * temp_val - 2) * std::exp(-this->get_time()) -
+               (temp_val*temp_val + 3*temp_val + 2)* std::exp(-this->get_time() * 2);
+
+      if (dim == 3)
+        return 0.0;
+
+      else return 0.0;
     }
   };
 
@@ -109,10 +120,70 @@ public:
     {}
 
     virtual double
-    value(const Point<dim> & /*p*/,
+    value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      return 3 * std::exp(-this->get_time());
+      return (std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
+    }
+  };
+
+  class FunctionG0 : public Function<dim>
+  {
+  public:
+    // Constructor.
+    FunctionG0()
+    {}
+
+    virtual double
+    value(const Point<dim> & p,
+          const unsigned int /*component*/ = 0) const override
+    {
+      return (+std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
+    }
+  };
+
+  class FunctionG1 : public Function<dim>
+  {
+  public:
+    // Constructor.
+    FunctionG1()
+    {}
+
+    virtual double
+    value(const Point<dim> & p,
+          const unsigned int /*component*/ = 0) const override
+    {
+      return (-std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
+    }
+  };
+
+  class FunctionG2 : public Function<dim>
+  {
+  public:
+    // Constructor.
+    FunctionG2()
+    {}
+
+    virtual double
+    value(const Point<dim> & p,
+          const unsigned int /*component*/ = 0) const override
+    {
+      return (+std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
+    }
+  };
+
+  class FunctionG3 : public Function<dim>
+  {
+  public:
+    // Constructor.
+    FunctionG3()
+    {}
+
+    virtual double
+    value(const Point<dim> & p,
+          const unsigned int /*component*/ = 0) const override
+    {
+      return (-std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
     }
   };
 
@@ -292,6 +363,10 @@ protected:
 
   // Dirichlet boundary conditions.
   FunctionG function_g;
+  FunctionG0 function_g0;
+  FunctionG1 function_g1;
+  FunctionG2 function_g2;
+  FunctionG3 function_g3;
 
   // Neumann boundary condition.
   FunctionH function_h;

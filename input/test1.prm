@@ -1,0 +1,7 @@
+# Listing of Parameters
+# ---------------------
+set coef_alpha = 1.0
+set coef_dext = 1.0
+set coef_daxn = 0.0
+
+set fib = 0

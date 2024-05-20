@@ -4,7 +4,8 @@
 #include <iostream>
 #include <vector>
 
-#include "Fisher_Kolmogorov_solver.hpp"
+// #include "Fisher_Kolmogorov_solver.hpp"
+#include "Fisher_Kolmogorov_solver_convergence.hpp"
 
 // Main function.
 int
@@ -14,15 +15,16 @@ main(int argc, char *argv[])
   const unsigned int               mpi_rank =
     Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
 
-  const std::vector<std::string> meshes = {"../mesh/mesh-square-h0.275000.msh",
+  const std::vector<std::string> meshes = {/*"../mesh/mesh-square-h0.275000.msh",
                                            "../mesh/mesh-square-h0.150000.msh",
-                                           "../mesh/mesh-square-h0.085000.msh",
+                                           "../mesh/mesh-square-h0.085000.msh",*/
                                            "../mesh/mesh-square-h0.045000.msh"};
-  const std::vector<double>      h_vals = {0.275000,
+  const std::vector<double>      h_vals = {/*0.275000,
                                            0.150000,
-                                           0.085000,
+                                           0.085000,*/
                                            0.045000};
-
+  
+  const unsigned int dim = 2;
   const unsigned int degree = 1;
 
   const double T      = 1e-3;
@@ -34,7 +36,7 @@ main(int argc, char *argv[])
 
   for (unsigned int i = 0; i < meshes.size(); ++i)
     {
-      FisherKol problem(meshes[i], degree, T, deltat);
+      FisherKol<dim> problem(meshes[i], degree, T, deltat, "../input/test1.prm");
 
       problem.setup();
       problem.solve();

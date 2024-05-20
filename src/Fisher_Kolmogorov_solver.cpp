@@ -210,6 +210,7 @@ FisherKol::assemble_system()
             }
         }
 
+
       cell->get_dof_indices(dof_indices);
 
       jacobian_matrix.add(dof_indices, cell_matrix);
@@ -218,6 +219,7 @@ FisherKol::assemble_system()
 
   jacobian_matrix.compress(VectorOperation::add);
   residual_vector.compress(VectorOperation::add);
+
 
 }
 
