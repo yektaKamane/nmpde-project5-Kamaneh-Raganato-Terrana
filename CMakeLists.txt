@@ -3,8 +3,8 @@ project(project_title LANGUAGES CXX C)
 
 include(common/cmake-common.cmake)
 
-# add_executable(test2D src/test2D.cpp src/FisherKolmogorov2D.cpp)
-# deal_ii_setup_target(test2D)
+add_executable(test2D src/test2D.cpp src/FisherKolmogorov2D.cpp)
+deal_ii_setup_target(test2D)
 
 # add_executable(test3D src/test3D.cpp src/FisherKolmogorov3D.cpp)
 # deal_ii_setup_target(test3D)

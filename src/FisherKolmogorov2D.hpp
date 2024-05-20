@@ -169,7 +169,7 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      if (p[0] < 80.0 && p[0] > 75.0 && p[1] < 80.0 && p[1] > 75.0)
+      if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
       {
         return 0.8;
       }

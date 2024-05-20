@@ -14,20 +14,19 @@ main(int argc, char *argv[])
   const unsigned int               mpi_rank =
     Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
 
-  const std::vector<std::string> meshes = {"../mesh/mesh-square-5.msh",
-                                           "../mesh/mesh-square-10.msh",
-                                           "../mesh/mesh-square-20.msh",
-                                           "../mesh/mesh-square-40.msh"};
-  const std::vector<double>      h_vals = {1.0 / 5.0,
-                                           1.0 / 10.0,
-                                           1.0 / 20.0,
-                                           1.0 / 40.0};
+  const std::vector<std::string> meshes = {"../mesh/mesh-square-h0.275000.msh",
+                                           "../mesh/mesh-square-h0.150000.msh",
+                                           "../mesh/mesh-square-h0.085000.msh",
+                                           "../mesh/mesh-square-h0.045000.msh"};
+  const std::vector<double>      h_vals = {0.275000,
+                                           0.150000,
+                                           0.085000,
+                                           0.045000};
 
-  // const unsigned int degree = 1;
-  const unsigned int degree = 3;
+  const unsigned int degree = 1;
 
-  const double T      = 5;
-  const double deltat = 0.1;
+  const double T      = 1e-3;
+  const double deltat = 1e-5;
   // const double theta  = 0.5;
 
   std::vector<double> errors_L2;
@@ -62,40 +61,40 @@ main(int argc, char *argv[])
           convergence_file << h_vals[i] << "," << errors_L2[i] << ","
                            << errors_H1[i] << std::endl;
 
-          // std::cout << std::scientific << "dt = " << std::setw(4)
-          //           << std::setprecision(2) << deltat_vector[i];
+          std::cout << std::scientific << "h = " << std::setw(4)
+                    << std::setprecision(2) << h_vals[i];
 
-          // std::cout << std::scientific << " | eL2 = " << errors_L2[i];
+          std::cout << std::scientific << " | eL2 = " << errors_L2[i];
 
-          // // Estimate the convergence order.
-          // if (i > 0)
-          //   {
-          //     const double p =
-          //       std::log(errors_L2[i] / errors_L2[i - 1]) /
-          //       std::log(deltat_vector[i] / deltat_vector[i - 1]);
+          // Estimate the convergence order.
+          if (i > 0)
+            {
+              const double p =
+                std::log(errors_L2[i] / errors_L2[i - 1]) /
+                std::log(h_vals[i] / h_vals[i - 1]);
 
-          //     std::cout << " (" << std::fixed << std::setprecision(2)
-          //               << std::setw(4) << p << ")";
-          //   }
-          // else
-          //   std::cout << " (  - )";
+              std::cout << " (" << std::fixed << std::setprecision(2)
+                        << std::setw(4) << p << ")";
+            }
+          else
+            std::cout << " (  - )";
 
-          // std::cout << std::scientific << " | eH1 = " << errors_H1[i];
+          std::cout << std::scientific << " | eH1 = " << errors_H1[i];
 
-          // // Estimate the convergence order.
-          // if (i > 0)
-          //   {
-          //     const double p =
-          //       std::log(errors_H1[i] / errors_H1[i - 1]) /
-          //       std::log(deltat_vector[i] / deltat_vector[i - 1]);
+          // Estimate the convergence order.
+          if (i > 0)
+            {
+              const double p =
+                std::log(errors_H1[i] / errors_H1[i - 1]) /
+                std::log(h_vals[i] / h_vals[i - 1]);
 
-          //     std::cout << " (" << std::fixed << std::setprecision(2)
-          //               << std::setw(4) << p << ")";
-          //   }
-          // else
-          //   std::cout << " (  - )";
+              std::cout << " (" << std::fixed << std::setprecision(2)
+                        << std::setw(4) << p << ")";
+            }
+          else
+            std::cout << " (  - )";
 
-          // std::cout << "\n";
+          std::cout << "\n";
         }
 
       table.evaluate_all_convergence_rates(ConvergenceTable::reduction_rate_log2);

@@ -59,12 +59,11 @@ public:
       Tensor<2, dim> values;
       for (unsigned int i = 0; i < dim; ++i)
       {
-        values[i][i] = 0.001;
+        values[i][i] = 1.0;
       }
       // values[1][1] += 10.0;
       return values;
     }
-
   };
 
   // Function for the forcing term.
