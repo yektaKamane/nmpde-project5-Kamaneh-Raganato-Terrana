@@ -129,17 +129,17 @@ public:
   // Constructor. We provide the final time, time step Delta t and theta method
   // parameter as constructor arguments.
   FisherKol(const std::string  &mesh_file_name_,
-                const unsigned int &r_,
-                const double       &T_,
-                const double       &deltat_,
+                // const unsigned int &r_,
+                // const double       &T_,
+                // const double       &deltat_,
                 const std::string  &prm_file_)
     : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
     , mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD))
     , pcout(std::cout, mpi_rank == 0)
-    , T(T_)
+    // , T(T_)
     , mesh_file_name(mesh_file_name_)
-    , r(r_)
-    , deltat(deltat_)
+    // , r(r_)
+    // , deltat(deltat_)
     , prm_file(prm_file_)
     , mesh(MPI_COMM_WORLD)
   {
@@ -147,6 +147,10 @@ public:
       parameters.declare_entry("coef_dext", "1.0", Patterns::Double(), "dummy");
       parameters.declare_entry("coef_daxn", "1.0", Patterns::Double(), "dummy");
       parameters.declare_entry("fib", "0", Patterns::Integer(), "dummy");
+
+      parameters.declare_entry("T", "0", Patterns::Double(), "dummy");
+      parameters.declare_entry("deltat", "0", Patterns::Double(), "dummy");
+      parameters.declare_entry("degree", "0", Patterns::Integer(), "dummy");
 
       parameters.parse_input(prm_file);
   }
@@ -205,8 +209,8 @@ protected:
   // Current time.
   double time;
 
-  // Final time.
-  const double T;
+  // // Final time.
+  // const double T;
 
   // Discretization. ///////////////////////////////////////////////////////////
 
@@ -214,10 +218,10 @@ protected:
   const std::string mesh_file_name;
 
   // Polynomial degree.
-  const unsigned int r;
+  // const unsigned int r;
 
   // Time step.
-  const double deltat;
+  // const double deltat;
 
   const std::string prm_file;
 

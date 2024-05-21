@@ -33,6 +33,7 @@ void FisherKol<dim>::setup()
   {
     pcout << "Initializing the finite element space" << std::endl;
 
+    const unsigned int r = parameters.get_integer("degree");
     fe = std::make_unique<FE_SimplexP<dim>>(r);
 
     pcout << "  Degree                     = " << fe->degree << std::endl;
@@ -117,6 +118,7 @@ void FisherKol<dim>::assemble_system()
   const double alpha = parameters.get_double("coef_alpha");
   const double d_ext = parameters.get_double("coef_dext");
   const double d_axn = parameters.get_double("coef_daxn");
+  const double deltat = parameters.get_double("deltat");
 
   Tensor<2, dim> D_matrix;
   for (unsigned int i = 0; i < dim; ++i){
@@ -290,6 +292,8 @@ void FisherKol<dim>::solve()
 
   unsigned int time_step = 0;
 
+  const double T = parameters.get_double("T");
+  const double deltat = parameters.get_double("deltat");
   while (time < T - 0.5 * deltat)
     {
       time += deltat;
@@ -316,6 +320,8 @@ double FisherKol<dim>::compute_error(const VectorTools::NormType &norm_type)
 {
   FE_SimplexP<dim> fe_linear(1);
   MappingFE mapping(fe_linear);
+
+  const unsigned int r = parameters.get_integer("degree");
 
   const QGaussSimplex<dim> quadrature_error = QGaussSimplex<dim>(r + 2);
 
