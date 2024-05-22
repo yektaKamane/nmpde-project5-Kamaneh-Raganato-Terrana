@@ -1,30 +1,45 @@
-#include "Fisher_Kolmogorov_solver_convergence.hpp"
+#include "FisherKolmogorov1D.hpp"
 
-template class FisherKol<2>;
-template class FisherKol<3>;
-
-template <int dim>
-void FisherKol<dim>::setup()
+void
+FisherKol::setup()
 {
   // Create the mesh.
+  // {
+  //   pcout << "Initializing the mesh" << std::endl;
+
+  //   Triangulation<dim> mesh_serial;
+
+  //   GridIn<dim> grid_in;
+  //   grid_in.attach_triangulation(mesh_serial);
+
+  //   std::ifstream grid_in_file(mesh_file_name);
+  //   grid_in.read_msh(grid_in_file);
+
+  //   GridTools::partition_triangulation(mpi_size, mesh_serial);
+  //   const auto construction_data = TriangulationDescription::Utilities::
+  //     create_description_from_triangulation(mesh_serial, MPI_COMM_WORLD);
+  //   mesh.create_triangulation(construction_data);
+
+  //   pcout << "  Number of elements = " << mesh.n_global_active_cells()
+  //         << std::endl;
+  // }
+
+  // Create the mesh.
   {
-    pcout << "Initializing the mesh" << std::endl;
+    if (mpi_rank == 0)
+    {
+      pcout << "Initializing the mesh" << std::endl;
+      GridGenerator::subdivided_hyper_cube(mesh, N + 1, -1.0, 1.0, true);
+      pcout << "  Number of elements = " << mesh.n_active_cells()
+                << std::endl;
 
-    Triangulation<dim> mesh_serial;
-
-    GridIn<dim> grid_in;
-    grid_in.attach_triangulation(mesh_serial);
-
-    std::ifstream grid_in_file(mesh_file_name);
-    grid_in.read_msh(grid_in_file);
-
-    GridTools::partition_triangulation(mpi_size, mesh_serial);
-    const auto construction_data = TriangulationDescription::Utilities::
-      create_description_from_triangulation(mesh_serial, MPI_COMM_WORLD);
-    mesh.create_triangulation(construction_data);
-
-    pcout << "  Number of elements = " << mesh.n_global_active_cells()
-          << std::endl;
+      // Write the mesh to file.
+      const std::string mesh_file_name = "mesh-" + std::to_string(N + 1) + ".vtk";
+      GridOut           grid_out;
+      std::ofstream     grid_out_file(mesh_file_name);
+      grid_out.write_vtk(mesh, grid_out_file);
+      pcout << "  Mesh saved to " << mesh_file_name << std::endl;
+    }
   }
 
   pcout << "-----------------------------------------------" << std::endl;
@@ -33,21 +48,16 @@ void FisherKol<dim>::setup()
   {
     pcout << "Initializing the finite element space" << std::endl;
 
-    fe = std::make_unique<FE_SimplexP<dim>>(r);
+    fe = std::make_unique<FE_Q<dim>>(r);
 
     pcout << "  Degree                     = " << fe->degree << std::endl;
     pcout << "  DoFs per cell              = " << fe->dofs_per_cell
           << std::endl;
 
-    quadrature = std::make_unique<QGaussSimplex<dim>>(r + 1);
+    quadrature = std::make_unique<QGauss<dim>>(r + 1);
 
     pcout << "  Quadrature points per cell = " << quadrature->size()
           << std::endl;
-
-    quadrature_boundary = std::make_unique<QGaussSimplex<dim - 1>>(r + 1);
-
-    std::cout << "  Quadrature points per boundary cell = "
-              << quadrature_boundary->size() << std::endl;
   }
 
   pcout << "-----------------------------------------------" << std::endl;
@@ -58,6 +68,33 @@ void FisherKol<dim>::setup()
 
     dof_handler.reinit(mesh);
     dof_handler.distribute_dofs(*fe);
+
+    // Set the initial conditions based on the material ID of the cells.
+    // PARTE AGGIUNTA CON COPILOT
+    // Vector<double> cell_initial_condition(fe->dofs_per_cell);
+    // for (const auto &cell : dof_handler.active_cell_iterators())
+    // {
+    //   if (cell->is_locally_owned())
+    //   {
+    //     unsigned int material_id = cell->material_id();
+    //     for (unsigned int i = 0; i < fe->dofs_per_cell; ++i)
+    //     {
+    //       Point<dim> p = cell->vertex(i);
+    //       if (material_id == 0)
+    //       {
+    //         // Set the initial condition for cells with material ID 0
+    //         cell_initial_condition[i] = (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45) ? 0.1 : 0.0;
+    //       }
+    //       else if (material_id == 1)
+    //       {
+    //         // Set the initial condition for cells with material ID 1
+    //         cell_initial_condition[i] = /* your initial condition for material ID 1 */;
+    //       }
+    //       // Add more conditions for other material IDs if necessary
+    //     }
+    //     cell->set_dof_values(cell_initial_condition, solution);
+    //   }
+    // }
 
     locally_owned_dofs = dof_handler.locally_owned_dofs();
     DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
@@ -91,9 +128,9 @@ void FisherKol<dim>::setup()
     solution_old = solution;
   }
 }
- 
-template <int dim>
-void FisherKol<dim>::assemble_system()
+
+void
+FisherKol::assemble_system()
 {
   const unsigned int dofs_per_cell = fe->dofs_per_cell;
   const unsigned int n_q           = quadrature->size();
@@ -102,14 +139,6 @@ void FisherKol<dim>::assemble_system()
                           *quadrature,
                           update_values | update_gradients |
                             update_quadrature_points | update_JxW_values);
-
-  // Since we need to compute integrals on the boundary for Neumann conditions,
-  // we also need a FEValues object to compute quantities on boundary edges.
-  FEFaceValues<dim> fe_values_boundary(*fe,
-                                       *quadrature_boundary,
-                                       update_values |
-                                         update_quadrature_points |
-                                         update_JxW_values);
 
   FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
   Vector<double>     cell_residual(dofs_per_cell);
@@ -128,16 +157,6 @@ void FisherKol<dim>::assemble_system()
 
   forcing_term.set_time(time);
 
-  // The coefficients are constant throughout the program
-  const double alpha = parameters.get_double("coef_alpha");
-  const double d_ext = parameters.get_double("coef_dext");
-  const double d_axn = parameters.get_double("coef_daxn");
-
-  Tensor<2, dim> D_matrix;
-  for (unsigned int i = 0; i < dim; ++i){
-    D_matrix[i][i] = d_ext;
-  }
-
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
       if (!cell->is_locally_owned())
@@ -154,12 +173,9 @@ void FisherKol<dim>::assemble_system()
 
       for (unsigned int q = 0; q < n_q; ++q)
         {
-          Tensor<2, dim> temp = fiber.isotropic(fe_values.quadrature_point(q));
-
-          D_matrix += d_axn * temp;
-
-          const double f_loc =
-            forcing_term.value(fe_values.quadrature_point(q));
+          // Evaluate coefficients on this quadrature node.
+          const double alpha_loc = alpha.value(fe_values.quadrature_point(q));
+           const Tensor<2, dim> D_matrix = D.matrix_value(fe_values.quadrature_point(q));
 
           for (unsigned int i = 0; i < dofs_per_cell; ++i)
             {
@@ -169,12 +185,12 @@ void FisherKol<dim>::assemble_system()
                                fe_values.shape_value(j, q) / deltat *
                                fe_values.JxW(q);
 
-                  cell_matrix(i, j) -= alpha *
+                  cell_matrix(i, j) -= alpha_loc *
                                       fe_values.shape_value(j, q) *
                                       fe_values.shape_value(i, q) *
                                       fe_values.JxW(q);
 
-                  cell_matrix(i, j) += 2.0 * alpha *
+                  cell_matrix(i, j) += 2.0 * alpha_loc *
                                       solution_loc[q] *
                                       fe_values.shape_value(j, q) *
                                       fe_values.shape_value(i, q) *
@@ -182,7 +198,10 @@ void FisherKol<dim>::assemble_system()
 
                   const Tensor<1, dim> &grad_phi_i = fe_values.shape_grad(i, q);
                   const Tensor<1, dim> &grad_phi_j = fe_values.shape_grad(j, q);
-
+                  // if (i==0 && j==1){
+                  //   std::cout << grad_phi_j << ", " << grad_phi_i << std::endl;
+                  //   std::cout << D_matrix << std::endl;
+                  // }
                   cell_matrix(i, j) += scalar_product(D_matrix * grad_phi_j, grad_phi_i) * fe_values.JxW(q);
                   
           }
@@ -201,42 +220,14 @@ void FisherKol<dim>::assemble_system()
                     fe_values.JxW(q);
 
               // second term.
-              cell_residual(i) += alpha *
+              cell_residual(i) += alpha_loc *
                                   solution_loc[q] *
                                   (1.0 - solution_loc[q]) *
                                   fe_values.shape_value(i, q) * 
                                   fe_values.JxW(q);
-
-              // Forcing term.
-              cell_residual(i) +=
-                f_loc * fe_values.shape_value(i, q) * fe_values.JxW(q);
             }
         }
 
-      // If the cell is adjacent to the boundary we loop over its edges
-      // (referred to as faces in the deal.II jargon).
-      // if (cell->at_boundary())
-      //   {
-      //     for (unsigned int face_number = 0; face_number < cell->n_faces();
-      //          ++face_number)
-      //       {
-      //         // If current face lies on the boundary, and its boundary ID (or
-      //         // tag) is that of one of the Neumann boundaries, we assemble the
-      //         // boundary integral.
-      //         if (cell->face(face_number)->at_boundary() &&
-      //             (cell->face(face_number)->boundary_id() == 0 ||
-      //              cell->face(face_number)->boundary_id() == 1))
-      //           {
-      //             fe_values_boundary.reinit(cell, face_number);
-
-      //             for (unsigned int q = 0; q < quadrature_boundary->size(); ++q)
-      //               for (unsigned int i = 0; i < dofs_per_cell; ++i)
-      //                 cell_residual(i) -= function_h.value(fe_values_boundary.quadrature_point(q)) * // h(xq)
-      //                                     fe_values_boundary.shape_value(i, q) *                     // v(xq)
-      //                                     fe_values_boundary.JxW(q);                                 // Jq wq
-      //           }
-      //       }
-      //   }
 
       cell->get_dof_indices(dof_indices);
 
@@ -247,82 +238,33 @@ void FisherKol<dim>::assemble_system()
   jacobian_matrix.compress(VectorOperation::add);
   residual_vector.compress(VectorOperation::add);
 
-  // Dirichlet boundary conditions.
-  {
-    std::map<types::global_dof_index, double> boundary_values;
 
-    std::map<types::boundary_id, const Function<dim> *> boundary_functions;
-    // Functions::ZeroFunction<dim>                        zero_function;
-
-    boundary_functions[0] = &function_g;
-    boundary_functions[1] = &function_g;
-    boundary_functions[2] = &function_g;
-    boundary_functions[3] = &function_g;
-
-    VectorTools::interpolate_boundary_values(dof_handler,
-                                             boundary_functions,
-                                             boundary_values);
-
-    MatrixTools::apply_boundary_values(
-      boundary_values, jacobian_matrix, delta_owned, residual_vector, false);
-  }
 }
 
-template <int dim>
-void FisherKol<dim>::solve_linear_system()
+void
+FisherKol::solve_linear_system()
 {
-  SolverControl solver_control(10000, 1e-12 * residual_vector.l2_norm());
+  SolverControl solver_control(100000, 1e-12 * residual_vector.l2_norm());
 
   SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
-  TrilinosWrappers::PreconditionAMG        preconditioner;
+  // TrilinosWrappers::PreconditionSSOR      preconditioner;
+  TrilinosWrappers::PreconditionAMG      preconditioner;
   preconditioner.initialize(
+    // jacobian_matrix, TrilinosWrappers::PreconditionSSOR::AdditionalData(1.0));
     jacobian_matrix, TrilinosWrappers::PreconditionAMG::AdditionalData(1.0));
 
   solver.solve(jacobian_matrix, delta_owned, residual_vector, preconditioner);
   pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;
 }
 
-template <int dim>
-void FisherKol<dim>::solve_newton()
+void
+FisherKol::solve_newton()
 {
   const unsigned int n_max_iters        = 1000;
-  const double       residual_tolerance = 1e-3;
+  const double       residual_tolerance = 1e-6;
 
   unsigned int n_iter        = 0;
   double       residual_norm = residual_tolerance + 1;
-
-  // We apply the boundary conditions to the initial guess (which is stored in
-  // solution_owned and solution).
-  {
-    IndexSet dirichlet_dofs = DoFTools::extract_boundary_dofs(dof_handler);
-    dirichlet_dofs          = dirichlet_dofs & dof_handler.locally_owned_dofs();
-
-    function_g.set_time(time);
-
-    TrilinosWrappers::MPI::Vector vector_dirichlet(solution_owned);
-    VectorTools::interpolate(dof_handler, function_g, vector_dirichlet);
-
-    for (const auto &idx : dirichlet_dofs)
-      solution_owned[idx] = vector_dirichlet[idx];
-
-    solution_owned.compress(VectorOperation::insert);
-    solution = solution_owned;
-  }
-  // {
-  //   IndexSet neumann_dofs = DoFTools::extract_boundary_dofs(dof_handler);
-  //   neumann_dofs          = neumann_dofs & dof_handler.locally_owned_dofs();
-
-  //   function_h.set_time(time);
-
-  //   TrilinosWrappers::MPI::Vector vector_neumann(solution_owned);
-  //   VectorTools::interpolate(dof_handler, function_h, vector_neumann);
-
-  //   for (const auto &idx : neumann_dofs)
-  //     solution_owned[idx] = vector_neumann[idx];
-
-  //   solution_owned.compress(VectorOperation::insert);
-  //   solution = solution_owned;
-  // }
 
   while (n_iter < n_max_iters && residual_norm > residual_tolerance)
     {
@@ -337,10 +279,8 @@ void FisherKol<dim>::solve_newton()
       // tolerance.
       if (residual_norm > residual_tolerance)
         {
-          // Step 1 of the Newton method.
           solve_linear_system();
 
-          // Step 2 of the Newton method.
           solution_owned += delta_owned;
           solution = solution_owned;
         }
@@ -353,8 +293,8 @@ void FisherKol<dim>::solve_newton()
     }
 }
 
-template <int dim>
-void FisherKol<dim>::output(const unsigned int &time_step) const
+void
+FisherKol::output(const unsigned int &time_step) const
 {
   DataOut<dim> data_out;
   data_out.add_data_vector(dof_handler, solution, "u");
@@ -370,8 +310,8 @@ void FisherKol<dim>::output(const unsigned int &time_step) const
     "./", "output", time_step, MPI_COMM_WORLD, 3);
 }
 
-template <int dim>
-void FisherKol<dim>::solve()
+void
+FisherKol::solve()
 {
   pcout << "===============================================" << std::endl;
 
@@ -412,27 +352,27 @@ void FisherKol<dim>::solve()
     }
 }
 
-template <int dim>
-double FisherKol<dim>::compute_error(const VectorTools::NormType &norm_type)
-{
-  FE_SimplexP<dim> fe_linear(1);
-  MappingFE mapping(fe_linear);
+// double 
+// FisherKol::compute_error(const VectorTools::NormType &norm_type)
+// {
+//   FE_Q<dim> fe_linear(1);
+//   MappingFE mapping(fe_linear);
 
-  const QGaussSimplex<dim> quadrature_error = QGaussSimplex<dim>(r + 2);
+//   const QGauss<dim> quadrature_error = QGauss<dim>(r + 2);
 
-  exact_solution.set_time(time);
+//   exact_solution.set_time(time);
 
-  Vector<double> error_per_cell;
-  VectorTools::integrate_difference(mapping,
-                                    dof_handler,
-                                    solution,
-                                    exact_solution,
-                                    error_per_cell,
-                                    quadrature_error,
-                                    norm_type);
+//   Vector<double> error_per_cell;
+//   VectorTools::integrate_difference(mapping,
+//                                     dof_handler,
+//                                     solution,
+//                                     exact_solution,
+//                                     error_per_cell,
+//                                     quadrature_error,
+//                                     norm_type);
 
-  const double error =
-      VectorTools::compute_global_error(mesh, error_per_cell, norm_type);
+//   const double error =
+//     VectorTools::compute_global_error(mesh, error_per_cell, norm_type);
 
-  return error;
-}
+//   return error;
+// }

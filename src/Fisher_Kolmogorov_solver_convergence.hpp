@@ -62,7 +62,7 @@ public:
   {
   public:
     Tensor<2, dim>
-    circumferential(const Point<dim> & p) const
+    isotropic(const Point<dim> & p) const
     {
       Tensor<2, dim> values;
       for (unsigned int i = 0; i < dim; ++i)
@@ -101,8 +101,10 @@ public:
     {
       double temp_val = std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]);
       if (dim == 2) 
-        return ((2 * M_PI - 1) * temp_val - 2) * std::exp(-this->get_time()) -
-               (temp_val*temp_val + 3*temp_val + 2)* std::exp(-this->get_time() * 2);
+        // return ((2 * M_PI * M_PI - 1) * temp_val - 2) * std::exp(-this->get_time()) +
+        //        (temp_val*temp_val + 3*temp_val + 2)* std::exp(-this->get_time() * 2);
+        return -2 * M_PI * M_PI * temp_val * std::exp(-this->get_time()) -
+               (temp_val * temp_val + 4 - 4 * temp_val) * std::exp(-this->get_time() * 2);
 
       if (dim == 3)
         return 0.0;
@@ -123,69 +125,77 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      return (std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
+      if (p[0]==0 && p[1]>=0 && p[1]<=1)
+        return (+std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
+      else if (p[0]==1 && p[1]>=0 && p[1]<=1)
+        return (-std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
+      else if (p[1]==0 && p[0]>=0 && p[0]<=1)
+        return (+std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
+      else if (p[1]==1 && p[0]>=0 && p[0]<=1)
+        return (-std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
+      
     }
   };
 
-  class FunctionG0 : public Function<dim>
-  {
-  public:
-    // Constructor.
-    FunctionG0()
-    {}
+  // class FunctionG0 : public Function<dim>
+  // {
+  // public:
+  //   // Constructor.
+  //   FunctionG0()
+  //   {}
 
-    virtual double
-    value(const Point<dim> & p,
-          const unsigned int /*component*/ = 0) const override
-    {
-      return (+std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
-    }
-  };
+  //   virtual double
+  //   value(const Point<dim> & p,
+  //         const unsigned int /*component*/ = 0) const override
+  //   {
+  //     return (+std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
+  //   }
+  // };
 
-  class FunctionG1 : public Function<dim>
-  {
-  public:
-    // Constructor.
-    FunctionG1()
-    {}
+  // class FunctionG1 : public Function<dim>
+  // {
+  // public:
+  //   // Constructor.
+  //   FunctionG1()
+  //   {}
 
-    virtual double
-    value(const Point<dim> & p,
-          const unsigned int /*component*/ = 0) const override
-    {
-      return (-std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
-    }
-  };
+  //   virtual double
+  //   value(const Point<dim> & p,
+  //         const unsigned int /*component*/ = 0) const override
+  //   {
+  //     return (-std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
+  //   }
+  // };
 
-  class FunctionG2 : public Function<dim>
-  {
-  public:
-    // Constructor.
-    FunctionG2()
-    {}
+  // class FunctionG2 : public Function<dim>
+  // {
+  // public:
+  //   // Constructor.
+  //   FunctionG2()
+  //   {}
 
-    virtual double
-    value(const Point<dim> & p,
-          const unsigned int /*component*/ = 0) const override
-    {
-      return (+std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
-    }
-  };
+  //   virtual double
+  //   value(const Point<dim> & p,
+  //         const unsigned int /*component*/ = 0) const override
+  //   {
+  //     return (+std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
+  //   }
+  // };
 
-  class FunctionG3 : public Function<dim>
-  {
-  public:
-    // Constructor.
-    FunctionG3()
-    {}
+  // class FunctionG3 : public Function<dim>
+  // {
+  // public:
+  //   // Constructor.
+  //   FunctionG3()
+  //   {}
 
-    virtual double
-    value(const Point<dim> & p,
-          const unsigned int /*component*/ = 0) const override
-    {
-      return (-std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
-    }
-  };
+  //   virtual double
+  //   value(const Point<dim> & p,
+  //         const unsigned int /*component*/ = 0) const override
+  //   {
+  //     return (-std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
+  //   }
+  // };
 
   // Function for Neumann boundary condition.
   class FunctionH : public Function<dim>
@@ -363,10 +373,10 @@ protected:
 
   // Dirichlet boundary conditions.
   FunctionG function_g;
-  FunctionG0 function_g0;
-  FunctionG1 function_g1;
-  FunctionG2 function_g2;
-  FunctionG3 function_g3;
+  // FunctionG0 function_g0;
+  // FunctionG1 function_g1;
+  // FunctionG2 function_g2;
+  // FunctionG3 function_g3;
 
   // Neumann boundary condition.
   FunctionH function_h;
