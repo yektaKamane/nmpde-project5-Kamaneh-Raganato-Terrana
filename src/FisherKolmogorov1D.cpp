@@ -26,10 +26,10 @@ FisherKol::setup()
 
   // Create the mesh.
   {
-    if (mpi_rank == 0)
-    {
       pcout << "Initializing the mesh" << std::endl;
-      GridGenerator::subdivided_hyper_cube(mesh, N + 1, -1.0, 1.0, true);
+
+      Triangulation<dim> mesh_serial;
+      GridGenerator::subdivided_hyper_cube(mesh_serial, N + 1, -1.0, 1.0, true);
       pcout << "  Number of elements = " << mesh.n_active_cells()
                 << std::endl;
 
@@ -37,9 +37,16 @@ FisherKol::setup()
       const std::string mesh_file_name = "mesh-" + std::to_string(N + 1) + ".vtk";
       GridOut           grid_out;
       std::ofstream     grid_out_file(mesh_file_name);
-      grid_out.write_vtk(mesh, grid_out_file);
+      grid_out.write_vtk(mesh_serial, grid_out_file);
       pcout << "  Mesh saved to " << mesh_file_name << std::endl;
-    }
+
+      GridTools::partition_triangulation(mpi_size, mesh_serial);
+      const auto construction_data = TriangulationDescription::Utilities::
+        create_description_from_triangulation(mesh_serial, MPI_COMM_WORLD);
+      mesh.create_triangulation(construction_data);
+
+      pcout << "  Number of elements = " << mesh.n_global_active_cells()
+            << std::endl;
   }
 
   pcout << "-----------------------------------------------" << std::endl;

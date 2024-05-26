@@ -15,8 +15,8 @@ main(int argc, char *argv[])
 
   // FisherKol problem("../mesh/brain_3.msh", degree, T, deltat);
   // FisherKol problem("../mesh/brain_benchmark.msh", degree, T, deltat);
-  // FisherKol problem("../mesh/brain-h3.0_diretta.msh", degree, T, deltat);
-  FisherKol problem("../mesh/brain-h3.0_surface2D.msh", degree, T, deltat);
+  FisherKol problem("../mesh/brain-h3.0_diretta.msh", degree, T, deltat);
+  // FisherKol problem("../mesh/brain-h3.0_surface2D.msh", degree, T, deltat);
   // FisherKol problem("../mesh/mesh-cube-5.msh", degree, T, deltat);
   // FisherKol problem("../mesh/mesh-cube-40.msh", degree, T, deltat);
   // FisherKol problem("../mesh/mesh-cube-10.msh", degree, T, deltat);

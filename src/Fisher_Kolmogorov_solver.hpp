@@ -35,7 +35,7 @@ class FisherKol
 {
 public:
   // Physical dimension (1D, 2D, 3D)
-  static constexpr unsigned int dim = 2; // MODIFIED
+  static constexpr unsigned int dim = 3; // MODIFIED
 
   // Function for the alpha coefficient.
   class FunctionAlpha : public Function<dim>
@@ -105,8 +105,8 @@ public:
       //   return 0.1;
       // }
       
-      // if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 /*&& p[2] < 50.0 && p[2] > 40.0*/)
-      if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
+      if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 && p[2] < 50.0 && p[2] > 40.0)
+      // if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
       {
         return 0.3;
       }
