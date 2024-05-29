@@ -1,7 +1,10 @@
 #include "FisherKolmogorov.hpp"
 
-void
-FisherKolmogorov::setup()
+template class FisherKol<2>;
+template class FisherKol<3>;
+
+template <int dim>
+void FisherKol<dim>::setup()
 {
   // Create the mesh.
   {
@@ -30,6 +33,7 @@ FisherKolmogorov::setup()
   {
     pcout << "Initializing the finite element space" << std::endl;
 
+    const unsigned int r = parameters.get_integer("degree");
     fe = std::make_unique<FE_SimplexP<dim>>(r);
 
     pcout << "  Degree                     = " << fe->degree << std::endl;
@@ -83,9 +87,9 @@ FisherKolmogorov::setup()
     solution_old = solution;
   }
 }
-
-void
-FisherKolmogorov::assemble_system()
+ 
+template <int dim>
+void FisherKol<dim>::assemble_system()
 {
   const unsigned int dofs_per_cell = fe->dofs_per_cell;
   const unsigned int n_q           = quadrature->size();
@@ -110,7 +114,16 @@ FisherKolmogorov::assemble_system()
   // Value of the solution at previous timestep (un) on current cell.
   std::vector<double> solution_old_loc(n_q);
 
-  forcing_term.set_time(time);
+  // The coefficients are constant throughout the program
+  const double alpha = parameters.get_double("coef_alpha");
+  const double d_ext = parameters.get_double("coef_dext");
+  const double d_axn = parameters.get_double("coef_daxn");
+  const double deltat = parameters.get_double("deltat");
+
+  Tensor<2, dim> D_matrix;
+  for (unsigned int i = 0; i < dim; ++i){
+    D_matrix[i][i] = d_ext;
+  }
 
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
@@ -128,32 +141,35 @@ FisherKolmogorov::assemble_system()
 
       for (unsigned int q = 0; q < n_q; ++q)
         {
-          // Evaluate coefficients on this quadrature node.
-          const double mu_0_loc = D_0.value(fe_values.quadrature_point(q));
-          
+          Tensor<2, dim> temp = fiber.isotropic(fe_values.quadrature_point(q));
+
+          D_matrix += d_axn * temp;
+
           for (unsigned int i = 0; i < dofs_per_cell; ++i)
             {
               for (unsigned int j = 0; j < dofs_per_cell; ++j)
                 {
-                  // Mass matrix.
-                  cell_matrix(i, j) += fe_vaslues.shape_value(i, q) *
-                                       fe_values.shape_value(j, q) / deltat *
-                                       fe_values.JxW(q);
+                  cell_matrix(i, j) += fe_values.shape_value(i, q) *
+                               fe_values.shape_value(j, q) / deltat *
+                               fe_values.JxW(q);
 
-                  // Non-linear stiffness matrix, first term.
-                  cell_matrix(i, j) +=
-                    scalar_product(fe_values.shape_grad(i, q),
-                                   mu_0_loc * fe_values.shape_grad(j, q)) *
-                    fe_values.JxW(q);
+                  cell_matrix(i, j) -= alpha *
+                                      fe_values.shape_value(j, q) *
+                                      fe_values.shape_value(i, q) *
+                                      fe_values.JxW(q);
 
-                  // Non-linear stiffness matrix, second term.
-                  cell_matrix(i, j) +=
-                    fe_values.shape_value(i,q)
-                    *function_alpha*(1.0-2.0*solution_loc[q])
-                    *fe_values.shape_value(j,q)
-                    *fe_values.JxW(q);
-                    
-                }
+                  cell_matrix(i, j) += 2.0 * alpha *
+                                      solution_loc[q] *
+                                      fe_values.shape_value(j, q) *
+                                      fe_values.shape_value(i, q) *
+                                      fe_values.JxW(q);
+
+                  const Tensor<1, dim> &grad_phi_i = fe_values.shape_grad(i, q);
+                  const Tensor<1, dim> &grad_phi_j = fe_values.shape_grad(j, q);
+
+                  cell_matrix(i, j) += scalar_product(D_matrix * grad_phi_j, grad_phi_i) * fe_values.JxW(q);
+                  
+          }
 
               // Assemble the residual vector (with changed sign).
 
@@ -162,13 +178,18 @@ FisherKolmogorov::assemble_system()
                                   deltat * fe_values.shape_value(i, q) *
                                   fe_values.JxW(q);
 
-              // Diffusion term.
+              // first term.
               cell_residual(i) -=
-                fe_values.shape_value(i,q)
-                    *function_alpha*(1.0-2.0*solution_loc[q])
-                    *fe_values.shape_value(j,q)
-                    *fe_values.JxW(q);
-              
+                    scalar_product( D_matrix * solution_gradient_loc[q],
+                               fe_values.shape_grad(i, q)) *
+                    fe_values.JxW(q);
+
+              // second term.
+              cell_residual(i) += alpha *
+                                  solution_loc[q] *
+                                  (1.0 - solution_loc[q]) *
+                                  fe_values.shape_value(i, q) * 
+                                  fe_values.JxW(q);
             }
         }
 
@@ -181,13 +202,12 @@ FisherKolmogorov::assemble_system()
   jacobian_matrix.compress(VectorOperation::add);
   residual_vector.compress(VectorOperation::add);
 
-  
 }
 
-void
-FisherKolmogorov::solve_linear_system()
+template <int dim>
+void FisherKol<dim>::solve_linear_system()
 {
-  SolverControl solver_control(1000, 1e-6 * residual_vector.l2_norm());
+  SolverControl solver_control(10000, 1e-12 * residual_vector.l2_norm());
 
   SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
   TrilinosWrappers::PreconditionSSOR      preconditioner;
@@ -195,11 +215,11 @@ FisherKolmogorov::solve_linear_system()
     jacobian_matrix, TrilinosWrappers::PreconditionSSOR::AdditionalData(1.0));
 
   solver.solve(jacobian_matrix, delta_owned, residual_vector, preconditioner);
-  pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;
+  // pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;
 }
 
-void
-FisherKolmogorov::solve_newton()
+template <int dim>
+void FisherKol<dim>::solve_newton()
 {
   const unsigned int n_max_iters        = 1000;
   const double       residual_tolerance = 1e-6;
@@ -207,31 +227,14 @@ FisherKolmogorov::solve_newton()
   unsigned int n_iter        = 0;
   double       residual_norm = residual_tolerance + 1;
 
-  // We apply the boundary conditions to the initial guess (which is stored in
-  // solution_owned and solution).
-  {
-    IndexSet dirichlet_dofs = DoFTools::extract_boundary_dofs(dof_handler);
-    dirichlet_dofs          = dirichlet_dofs & dof_handler.locally_owned_dofs();
-
-    function_g.set_time(time);
-
-    TrilinosWrappers::MPI::Vector vector_dirichlet(solution_owned);
-    VectorTools::interpolate(dof_handler, function_g, vector_dirichlet);
-
-    
-
-    solution_owned.compress(VectorOperation::insert);
-    solution = solution_owned;
-  }
-
   while (n_iter < n_max_iters && residual_norm > residual_tolerance)
     {
       assemble_system();
       residual_norm = residual_vector.l2_norm();
 
-      pcout << "  Newton iteration " << n_iter << "/" << n_max_iters
-            << " - ||r|| = " << std::scientific << std::setprecision(6)
-            << residual_norm << std::flush;
+      // pcout << "  Newton iteration " << n_iter << "/" << n_max_iters
+      //       << " - ||r|| = " << std::scientific << std::setprecision(6)
+      //       << residual_norm << std::flush;
 
       // We actually solve the system only if the residual is larger than the
       // tolerance.
@@ -244,15 +247,15 @@ FisherKolmogorov::solve_newton()
         }
       else
         {
-          pcout << " < tolerance" << std::endl;
+          // pcout << " < tolerance" << std::endl;
         }
 
       ++n_iter;
     }
 }
 
-void
-FisherKolmogorov::output(const unsigned int &time_step) const
+template <int dim>
+void FisherKol<dim>::output(const unsigned int &time_step) const
 {
   DataOut<dim> data_out;
   data_out.add_data_vector(dof_handler, solution, "u");
@@ -268,8 +271,8 @@ FisherKolmogorov::output(const unsigned int &time_step) const
     "./", "output", time_step, MPI_COMM_WORLD, 3);
 }
 
-void
-FisherKolmogorov::solve()
+template <int dim>
+void FisherKol<dim>::solve()
 {
   pcout << "===============================================" << std::endl;
 
@@ -289,6 +292,8 @@ FisherKolmogorov::solve()
 
   unsigned int time_step = 0;
 
+  const double T = parameters.get_double("T");
+  const double deltat = parameters.get_double("deltat");
   while (time < T - 0.5 * deltat)
     {
       time += deltat;
@@ -297,8 +302,8 @@ FisherKolmogorov::solve()
       // Store the old solution, so that it is available for assembly.
       solution_old = solution;
 
-      pcout << "n = " << std::setw(3) << time_step << ", t = " << std::setw(5)
-            << std::fixed << time << std::endl;
+      // pcout << "n = " << std::setw(3) << time_step << ", t = " << std::setw(5)
+      //       << std::fixed << time << std::endl;
 
       // At every time step, we invoke Newton's method to solve the non-linear
       // problem.
@@ -306,6 +311,33 @@ FisherKolmogorov::solve()
 
       output(time_step);
 
-      pcout << std::endl;
+      // pcout << std::endl;
     }
+}
+
+template <int dim>
+double FisherKol<dim>::compute_error(const VectorTools::NormType &norm_type)
+{
+  FE_SimplexP<dim> fe_linear(1);
+  MappingFE mapping(fe_linear);
+
+  const unsigned int r = parameters.get_integer("degree");
+
+  const QGaussSimplex<dim> quadrature_error = QGaussSimplex<dim>(r + 2);
+
+  exact_solution.set_time(time);
+
+  Vector<double> error_per_cell;
+  VectorTools::integrate_difference(mapping,
+                                    dof_handler,
+                                    solution,
+                                    exact_solution,
+                                    error_per_cell,
+                                    quadrature_error,
+                                    norm_type);
+
+  const double error =
+      VectorTools::compute_global_error(mesh, error_per_cell, norm_type);
+
+  return error;
 }

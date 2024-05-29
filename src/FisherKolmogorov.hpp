@@ -1,5 +1,5 @@
-#ifndef HEAT_NON_LINEAR_HPP
-#define HEAT_NON_LINEAR_HPP
+#ifndef FISHER_KOLMOGOROV_HPP
+#define FISHER_KOLMOGOROV_HPP
 
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/quadrature_lib.h>
@@ -16,6 +16,8 @@
 #include <deal.II/fe/mapping_fe.h>
 
 #include <deal.II/grid/grid_in.h>
+#include <deal.II/grid/grid_tools.h>
+#include <deal.II/distributed/grid_refinement.h>
 
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/trilinos_precondition.h>
@@ -25,85 +27,134 @@
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 
+#include <deal.II/base/parameter_handler.h>
+
 #include <fstream>
 #include <iostream>
-
+#include "neurodegeneration_models.hpp"
 using namespace dealii;
 
 // Class representing the non-linear diffusion problem.
-class FisherKolmogorov
+template <int dim>
+class FisherKol
 {
 public:
-  // Physical dimension (1D, 2D, 3D)
-  static constexpr unsigned int dim = 3;
 
-  class DiffusionTensor {
-public:
-    using value_type = dealii::Tensor<2, dim, double>;
-
-    // Constructor: Initialize with isotropic and anisotropic components
-    DiffusionTensor(double d_ext, double d_axn, const dealii::Tensor<1, dim, double>& n)
-        : d_ext_(d_ext), d_axn_(d_axn), n_(n) {}
-
-    // Evaluate the diffusion tensor at a given point
-    value_type evaluate(const dealii::Point<dim>& point) const {
-        // Construct the diffusion tensor D = d_ext * I + d_axn * n x n
-        value_type D;
-        D = d_ext_ * dealii::unit_symmetric_tensor<dim>();
-        //here I perform the tensor product of n with itself multiplying by d_axn
-        //and then I add the result to the isotropic part
-        for (unsigned int i = 0; i < dim; ++i) {
-            for (unsigned int j = 0; j < dim; ++j) {
-                D[i][j] += d_axn_ * n_[i] * n_[j];
-            }
-        }
-        return D;
-    }
-    private:
-    double d_ext_; // Isotropic extracellular diffusion coefficient
-    double d_axn_; // Anisotropic axonal transport coefficient
-    dealii::Tensor<1, dim, double> n_; // Axonal fiber direction
-  };
-
-  // Function for the mu_1 coefficient.
-  class FunctionAlpha : public Function<dim>
+  // Function of the fiber field
+  class FunctionN
   {
   public:
-    virtual double
-    value(const Point<dim> & /*p*/,
-          const unsigned int /*component*/ = 0) const override
+    Tensor<2, dim>
+    isotropic(const Point<dim> & /*p*/) const
     {
-      return 2.0;
+      Tensor<2, dim> values;
+      for (unsigned int i = 0; i < dim; ++i)
+      {
+        values[i][i] = 0.0;
+      }
+      return values;
     }
-  };
 
-  // Function for initial conditions.
+  };
+//evaluate at runtime or compile time?
   class FunctionU0 : public Function<dim>
+    {
+    public:
+        FunctionU0(const NeurodegenerationModel &disease_model)
+            : neuro_model(disease_model) {}
+
+        virtual double value(const Point<dim> &p, const unsigned int /*component*/ = 0) const override
+        {
+            
+            if (neurodegeneration_model.is_in_disease_region(p))
+            {
+                return 0.1; 
+            }
+            return 0.0;
+        }
+
+    private:
+        const NeurodegenerationModel &neuro_model;
+    };
+   // Exact solution
+  class ExactSolution : public Function<dim>
   {
   public:
     virtual double
-    value(const Point<dim> & /*p*/,
+    value(const Point<dim> &p,
           const unsigned int /*component*/ = 0) const override
     {
-      return 0.0;
+      double temp_val = std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]);
+      if (dim == 2) 
+        return (temp_val + 2) * std::exp(-this->get_time());
+
+      if (dim == 3)
+        return (temp_val * std::cos(M_PI * p[2])) * std::exp(-this->get_time());
+
+      else return 0.0;
+      
+    }
+
+    virtual Tensor<1, dim>
+    gradient(const Point<dim> &p,
+             const unsigned int /*component*/ = 0) const override
+    {
+      Tensor<1, dim> result;
+
+      if (dim == 2)
+      {
+        result[0] = -M_PI * std::sin(M_PI * p[0]) * std::cos(M_PI * p[1]) *
+                    std::exp(-this->get_time());
+        result[1] = -M_PI * std::cos(M_PI * p[0]) * std::sin(M_PI * p[1]) *
+                    std::exp(-this->get_time());
+      }
+      
+      if (dim == 3)
+      {
+        result[0] = -M_PI * std::sin(M_PI * p[0]) * std::cos(M_PI * p[1]) *
+                    std::cos(M_PI * p[2]) * std::exp(-this->get_time());
+        result[1] = -M_PI * std::sin(M_PI * p[1]) * std::cos(M_PI * p[0]) *
+                    std::cos(M_PI * p[2]) * std::exp(-this->get_time());
+        result[2] = -M_PI * std::sin(M_PI * p[2]) * std::cos(M_PI * p[0]) *
+                    std::cos(M_PI * p[1]) * std::exp(-this->get_time());
+      }
+
+      return result;
     }
   };
 
   // Constructor. We provide the final time, time step Delta t and theta method
   // parameter as constructor arguments.
-  FisherKolmogorov(const std::string  &mesh_file_name_,
-                const unsigned int &r_,
-                const double       &T_,
-                const double       &deltat_)
+  FisherKol(const std::string  &mesh_file_name_,
+                // const unsigned int &r_,
+                // const double       &T_,
+                // const double       &deltat_,
+                const std::string  &prm_file_,
+                NeurodegenerationModel::DiseaseType disease_type)
     : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
     , mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD))
     , pcout(std::cout, mpi_rank == 0)
-    , T(T_)
+    // , T(T_)
     , mesh_file_name(mesh_file_name_)
-    , r(r_)
-    , deltat(deltat_)
+    // , r(r_)
+    // , deltat(deltat_)
+    , prm_file(prm_file_)
     , mesh(MPI_COMM_WORLD)
-  {}
+    ,neurodegeneration_model(disease_type)
+    //, u_0(neurodegeneration_model)  // Inizializza FunctionU0 con il modello neurodegenerativo
+  
+  {
+      parameters.declare_entry("coef_alpha", "1.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("coef_dext", "1.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("coef_daxn", "1.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("fib", "0", Patterns::Integer(), "dummy");
+
+      parameters.declare_entry("T", "0", Patterns::Double(), "dummy");
+      parameters.declare_entry("deltat", "0", Patterns::Double(), "dummy");
+      parameters.declare_entry("degree", "0", Patterns::Integer(), "dummy");
+
+      parameters.parse_input(prm_file);
+  }
 
   // Initialization.
   void
@@ -112,6 +163,10 @@ public:
   // Solve the problem.
   void
   solve();
+
+  // Compute the error for convergence analysis.
+  double
+  compute_error(const VectorTools::NormType &norm_type);
 
 protected:
   // Assemble the tangent problem.
@@ -130,6 +185,7 @@ protected:
   void
   output(const unsigned int &time_step) const;
 
+
   // MPI parallel. /////////////////////////////////////////////////////////////
 
   // Number of MPI processes.
@@ -143,28 +199,20 @@ protected:
 
   // Problem definition. ///////////////////////////////////////////////////////
 
-  // mu_0 coefficient.
-  FunctionD D;
-
-  // mu_1 coefficient.
-  FunctionMu1 mu_1;
-
-  // Forcing term.
-  ForcingTerm forcing_term;
-
-  // Dirichlet boundary conditions.
-  FunctionG function_g;
-
-  FunctionAlpha function_alpha=2.0;
+  FunctionN fiber;
 
   // Initial conditions.
   FunctionU0 u_0;
+  NeurodegenerationModel neurodegeneration_model;
+
+  // Exact solution.
+  ExactSolution exact_solution;
 
   // Current time.
   double time;
 
-  // Final time.
-  const double T;
+  // // Final time.
+  // const double T;
 
   // Discretization. ///////////////////////////////////////////////////////////
 
@@ -172,10 +220,14 @@ protected:
   const std::string mesh_file_name;
 
   // Polynomial degree.
-  const unsigned int r;
+  // const unsigned int r;
 
   // Time step.
-  const double deltat;
+  // const double deltat;
+
+  const std::string prm_file;
+
+  ParameterHandler parameters;
 
   // Mesh.
   parallel::fullydistributed::Triangulation<dim> mesh;
