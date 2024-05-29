@@ -229,9 +229,9 @@ FisherKol::solve_linear_system()
   SolverControl solver_control(100000, 1e-12 * residual_vector.l2_norm());
 
   SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
-  TrilinosWrappers::PreconditionSSOR      preconditioner;
+  TrilinosWrappers::PreconditionAMG       preconditioner;
   preconditioner.initialize(
-    jacobian_matrix, TrilinosWrappers::PreconditionSSOR::AdditionalData(1.0));
+    jacobian_matrix, TrilinosWrappers::PreconditionAMG::AdditionalData(1.0));
 
   solver.solve(jacobian_matrix, delta_owned, residual_vector, preconditioner);
   pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;

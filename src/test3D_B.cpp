@@ -11,7 +11,7 @@ main(int argc, char *argv[])
   // const double T      = 20.0;
   // const double T      = 4.9;
   const double T      = 5.0;
-  const double deltat = 0.1;
+  const double deltat = 0.5;
 
   // FisherKol problem("../mesh/brain_3.msh", degree, T, deltat);
   // FisherKol problem("../mesh/brain_benchmark.msh", degree, T, deltat);

@@ -9,32 +9,25 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 
-#include <deal.II/fe/fe_simplex_p.h>
+#include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/fe_values_extractors.h>
 #include <deal.II/fe/mapping_fe.h>
 
 #include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/tria.h>
-#include <deal.II/grid/grid_tools.h>
-#include <deal.II/distributed/grid_refinement.h>
+#include <deal.II/grid/grid_in.h>
 
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/solver_gmres.h> // ...
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
-
-// #include <deal.II/multigrid/multigrid.h> // ...
 
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
-
-#include <deal.II/base/parameter_handler.h>
 
 #include <fstream>
 #include <iostream>
@@ -46,6 +39,9 @@ template <int dim>
 class FisherKol
 {
 public:
+  // Physical dimension (1D, 2D, 3D)
+  // static constexpr unsigned int dim = 1; // MODIFIED
+
   // Function for the alpha coefficient.
   class FunctionAlpha : public Function<dim>
   {
@@ -54,7 +50,7 @@ public:
     value(const Point<dim> & /*p*/,
           const unsigned int /*component*/ = 0) const override
     {
-      return 1.0;
+      return 2.0;
     }
   };
   
@@ -79,13 +75,13 @@ public:
   class FunctionD
   {
   public:
-    Tensor<2, dim> matrix_value(const Point<dim> & /*p ,
+    Tensor<2, dim> matrix_value(const Point<dim> & /*p*/ /* ,
                    Tensor<2,dim> &values */) const
     {
       Tensor<2, dim> values;
       for (unsigned int i = 0; i < dim; ++i)
       {
-        values[i][i] = 1.0;
+        values[i][i] = 0.0002;
       }
       // values[1][1] += 10.0;
       return values;
@@ -100,7 +96,14 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      double temp_val = std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]);
+      double temp_val = std::cos(M_PI * p[0]) * std::exp(-this->get_time());
+
+      if (dim == 1)
+      {
+        temp_val = std::cos(M_PI * p[0]);
+        return (M_PI * M_PI - 2) * temp_val + temp_val * temp_val;
+      };
+      
       if (dim == 2) 
         // return ((2 * M_PI * M_PI - 1) * temp_val - 2) * std::exp(-this->get_time()) +
         //        (temp_val*temp_val + 3*temp_val + 2)* std::exp(-this->get_time() * 2);
@@ -118,83 +121,11 @@ public:
   // class FunctionG : public Function<dim>
   // {
   // public:
-  //   // Constructor.
-  //   FunctionG()
-  //   {}
-
   //   virtual double
-  //   value(const Point<dim> & p,
+  //   value(const Point<dim> & /*p*/,
   //         const unsigned int /*component*/ = 0) const override
   //   {
-  //     if (p[0]==0 && p[1]>=0 && p[1]<=1)
-  //       return (+std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
-  //     else if (p[0]==1 && p[1]>=0 && p[1]<=1)
-  //       return (-std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
-  //     else if (p[1]==0 && p[0]>=0 && p[0]<=1)
-  //       return (+std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
-  //     else if (p[1]==1 && p[0]>=0 && p[0]<=1)
-  //       return (-std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
-      
-  //   }
-  // };
-
-  // class FunctionG0 : public Function<dim>
-  // {
-  // public:
-  //   // Constructor.
-  //   FunctionG0()
-  //   {}
-
-  //   virtual double
-  //   value(const Point<dim> & p,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return (+std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
-  //   }
-  // };
-
-  // class FunctionG1 : public Function<dim>
-  // {
-  // public:
-  //   // Constructor.
-  //   FunctionG1()
-  //   {}
-
-  //   virtual double
-  //   value(const Point<dim> & p,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return (-std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
-  //   }
-  // };
-
-  // class FunctionG2 : public Function<dim>
-  // {
-  // public:
-  //   // Constructor.
-  //   FunctionG2()
-  //   {}
-
-  //   virtual double
-  //   value(const Point<dim> & p,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return (+std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
-  //   }
-  // };
-
-  // class FunctionG3 : public Function<dim>
-  // {
-  // public:
-  //   // Constructor.
-  //   FunctionG3()
-  //   {}
-
-  //   virtual double
-  //   value(const Point<dim> & p,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return (-std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
+  //     return 0.0;
   //   }
   // };
 
@@ -223,29 +154,28 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      // if (dim == 2){
-      //   if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
-      //     return 0.1;
+      // if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
+      // // if (p[0] < 0.05 && p[0] > -0.05 && p[1] < 0.05 && p[1] > -0.05 && p[2] < 0.05 && p[2] > -0.05)
+      // // if(p[0] == 0)
+      // {
+      //   return 0.1;
       // }
-
-      // if (dim == 3){
-      //   if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 && p[2] < 50.0 && p[2] > 40.0)
-      //     return 0.95;
+      
+      // if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 /*&& p[2] < 50.0 && p[2] > 40.0*/)
+      // if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
+      // {
+      //   return 0.3;
       // }
-
-      if (dim == 2) {
-        return std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]) + 2;
-      }
-
-      if (dim == 3) {
-        return 0.0;
-      }
-
-      return 0.0;
+      // if (p[0]>=0.45 && p[0]<=0.55)
+      //   return 0.1;
+      return std::cos(M_PI * p[0]);
+  
+      // return 0.0;
+      // return p[0] * (1 - p[0]) * p[1] * (1 - p[1]);
     }
   };
 
-   // Exact solution
+  // Exact solution.
   class ExactSolution : public Function<dim>
   {
   public:
@@ -253,15 +183,7 @@ public:
     value(const Point<dim> &p,
           const unsigned int /*component*/ = 0) const override
     {
-      double temp_val = std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]);
-      if (dim == 2) 
-        return (temp_val + 2) * std::exp(-this->get_time());
-
-      if (dim == 3)
-        return (temp_val * std::cos(M_PI * p[2])) * std::exp(-this->get_time());
-
-      else return 0.0;
-      
+      return std::cos(M_PI*p[0]) * std::exp(-this->get_time());
     }
 
     virtual Tensor<1, dim>
@@ -270,23 +192,8 @@ public:
     {
       Tensor<1, dim> result;
 
-      if (dim == 2)
-      {
-        result[0] = -M_PI * std::sin(M_PI * p[0]) * std::cos(M_PI * p[1]) *
-                    std::exp(-this->get_time());
-        result[1] = -M_PI * std::cos(M_PI * p[0]) * std::sin(M_PI * p[1]) *
-                    std::exp(-this->get_time());
-      }
-      
-      if (dim == 3)
-      {
-        result[0] = -M_PI * std::sin(M_PI * p[0]) * std::cos(M_PI * p[1]) *
-                    std::cos(M_PI * p[2]) * std::exp(-this->get_time());
-        result[1] = -M_PI * std::sin(M_PI * p[1]) * std::cos(M_PI * p[0]) *
-                    std::cos(M_PI * p[2]) * std::exp(-this->get_time());
-        result[2] = -M_PI * std::sin(M_PI * p[2]) * std::cos(M_PI * p[0]) *
-                    std::cos(M_PI * p[1]) * std::exp(-this->get_time());
-      }
+      // duex / dx
+      result[0] = -M_PI * std::sin(M_PI * p[0]) * std::exp(-this->get_time());
 
       return result;
     }
@@ -294,7 +201,7 @@ public:
 
   // Constructor. We provide the final time, time step Delta t and theta method
   // parameter as constructor arguments.
-  FisherKol(const std::string  &mesh_file_name_,
+  FisherKol(const unsigned int N_,
                 const unsigned int &r_,
                 const double       &T_,
                 const double       &deltat_,
@@ -303,7 +210,7 @@ public:
     , mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD))
     , pcout(std::cout, mpi_rank == 0)
     , T(T_)
-    , mesh_file_name(mesh_file_name_)
+    , N(N_)
     , r(r_)
     , deltat(deltat_)
     , prm_file(prm_file_)
@@ -346,7 +253,6 @@ protected:
   void
   output(const unsigned int &time_step) const;
 
-
   // MPI parallel. /////////////////////////////////////////////////////////////
 
   // Number of MPI processes.
@@ -374,10 +280,6 @@ protected:
 
   // Dirichlet boundary conditions.
   // FunctionG function_g;
-  // FunctionG0 function_g0;
-  // FunctionG1 function_g1;
-  // FunctionG2 function_g2;
-  // FunctionG3 function_g3;
 
   // Neumann boundary condition.
   FunctionH function_h;
@@ -394,10 +296,13 @@ protected:
   // Final time.
   const double T;
 
+  // Number of elements.
+  const unsigned int N;
+
   // Discretization. ///////////////////////////////////////////////////////////
 
   // Mesh file name.
-  const std::string mesh_file_name;
+  // const std::string mesh_file_name;
 
   // Polynomial degree.
   const unsigned int r;
@@ -411,6 +316,7 @@ protected:
 
   // Mesh.
   parallel::fullydistributed::Triangulation<dim> mesh;
+  // Triangulation<dim> mesh;
 
   // Finite element space.
   std::unique_ptr<FiniteElement<dim>> fe;

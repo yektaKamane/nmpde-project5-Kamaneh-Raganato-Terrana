@@ -4,39 +4,44 @@
 #include <iostream>
 #include <vector>
 
-// #include "Fisher_Kolmogorov_solver.hpp"
-#include "Fisher_Kolmogorov_solver_convergence.hpp"
+#include "FisherKolmogorov1D_convergence.hpp"
 
 // Main function.
 int
-main(int argc, char *argv[])
+main(int argc, char * argv[])
 {
   Utilities::MPI::MPI_InitFinalize mpi_init(argc, argv);
   const unsigned int               mpi_rank =
     Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
-
-  const std::vector<std::string> meshes = {"../mesh/mesh-square-h0.275000.msh",
-                                           "../mesh/mesh-square-h0.150000.msh",
-                                           "../mesh/mesh-square-h0.085000.msh",
-                                           "../mesh/mesh-square-h0.045000.msh"};
-  const std::vector<double>      h_vals = {0.275000,
-                                           0.150000,
-                                           0.085000,
-                                           0.045000};
   
-  const unsigned int dim = 2;
-  const unsigned int degree = 1;
+  // const std::vector<int> N_vals = {200,
+  //                                  400,
+  //                                  800,
+  //                                  1600};
+  // const std::vector<double> h_vals = {1/200,
+  //                                     1/400,
+  //                                     1/800,
+  //                                     1/1600};
+    const std::vector<int> N_vals = {25,
+                                     50,
+                                     100,
+                                     200};
+  const std::vector<double> h_vals = {1/25,
+                                      1/50,
+                                      1/100,
+                                      1/200};
 
-  const double T      = 1e-3;
-  const double deltat = 1e-5;
-  // const double theta  = 0.5;
+  const unsigned int dim = 1;
+  const unsigned int r   = 1;
+  const double T         = 20.0;
+  const double deltat    = 0.1;
 
   std::vector<double> errors_L2;
   std::vector<double> errors_H1;
 
-  for (unsigned int i = 0; i < meshes.size(); ++i)
+  for (unsigned int i = 0; i < N_vals.size(); ++i)
     {
-      FisherKol<dim> problem(meshes[i], degree, T, deltat, "../input/test1.prm");
+      FisherKol<dim> problem(N_vals[i], r, T, deltat, "../input/test1.prm");
 
       problem.setup();
       problem.solve();
@@ -107,4 +112,6 @@ main(int argc, char *argv[])
 
   return 0;
 }
+
+
 
