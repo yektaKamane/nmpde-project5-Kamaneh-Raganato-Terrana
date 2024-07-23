@@ -129,11 +129,7 @@ void FisherKol<dim>::assemble_system()
 
   // Since we need to compute integrals on the boundary for Neumann conditions,
   // we also need a FEValues object to compute quantities on boundary edges.
-  FEFaceValues<dim> fe_values_boundary(*fe,
-                                       *quadrature_boundary,
-                                       update_values |
-                                         update_quadrature_points |
-                                         update_JxW_values);
+
 
   FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
   Vector<double>     cell_residual(dofs_per_cell);

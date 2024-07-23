@@ -96,7 +96,7 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      double temp_val = std::cos(M_PI * p[0]) * std::exp(-this->get_time());
+      // double temp_val = std::cos(M_PI * p[0]) * std::exp(-this->get_time());
 
       if (dim == 1)
       {

@@ -33,6 +33,7 @@ void FisherKol<dim>::setup()
   {
     pcout << "Initializing the finite element space" << std::endl;
 
+    const unsigned int r = parameters.get_integer("degree");
     fe = std::make_unique<FE_SimplexP<dim>>(r);
 
     pcout << "  Degree                     = " << fe->degree << std::endl;
@@ -129,10 +130,19 @@ void FisherKol<dim>::assemble_system()
   forcing_term.set_time(time);
 
   // The coefficients are constant throughout the program
-  const double alpha = parameters.get_double("coef_alpha");
-  const double d_ext = parameters.get_double("coef_dext");
-  const double d_axn = parameters.get_double("coef_daxn");
+  const double alpha  = parameters.get_double("coef_alpha");
+  const double d_ext  = parameters.get_double("coef_dext");
+  const double d_axn  = parameters.get_double("coef_daxn");
+  const double deltat = parameters.get_double("deltat");
+  const int    fib    = parameters.get_integer("fib");
 
+  // Assemble the diffusion coefficient matrix.
+  // Step 1: the extracellular diffusion matrix is d_ext * I, where I is the identity matrix. We start assembling D_matrix
+  // by setting the diagonal elements to d_ext.
+  // Step 2: the anisotropic diffusion matrix is d_axn * (n x n), where n is the local axonal direction. We complete assembling
+  // D_matrix by adding the contribution given by the fiber tensor.
+
+  // Step 1 of assembling the diffusion coefficient matrix.
   Tensor<2, dim> D_matrix;
   for (unsigned int i = 0; i < dim; ++i){
     D_matrix[i][i] = d_ext;
@@ -154,7 +164,16 @@ void FisherKol<dim>::assemble_system()
 
       for (unsigned int q = 0; q < n_q; ++q)
         {
-          Tensor<2, dim> temp = fiber.isotropic(fe_values.quadrature_point(q));
+          // Step 2 of assembling the diffusion coefficient matrix.
+          Tensor<2, dim> temp;
+          if (fib == 0)
+            temp = fiber.isotropic(fe_values.quadrature_point(q));
+          else if (fib == 1)
+            temp = fiber.anisotropic_x(fe_values.quadrature_point(q));
+          else if (fib == 2)
+            temp = fiber.anisotropic_y(fe_values.quadrature_point(q));
+          else if (fib == 3)
+            temp = fiber.circumferential(fe_values.quadrature_point(q));
 
           D_matrix += d_axn * temp;
 
@@ -223,11 +242,11 @@ void FisherKol<dim>::assemble_system()
               // If current face lies on the boundary, and its boundary ID (or
               // tag) is that of one of the Neumann boundaries, we assemble the
               // boundary integral.
-              if (cell->face(face_number)->at_boundary() &&
+              if (cell->face(face_number)->at_boundary() /* &&
                   (cell->face(face_number)->boundary_id() == 0 ||
                    cell->face(face_number)->boundary_id() == 1 ||
                    cell->face(face_number)->boundary_id() == 2 ||
-                   cell->face(face_number)->boundary_id() == 3))
+                   cell->face(face_number)->boundary_id() == 3)*/)
                 {
                   fe_values_boundary.reinit(cell, face_number);
 
@@ -248,26 +267,6 @@ void FisherKol<dim>::assemble_system()
 
   jacobian_matrix.compress(VectorOperation::add);
   residual_vector.compress(VectorOperation::add);
-
-  // Dirichlet boundary conditions.
-  // {
-  //   std::map<types::global_dof_index, double> boundary_values;
-
-  //   std::map<types::boundary_id, const Function<dim> *> boundary_functions;
-  //   // Functions::ZeroFunction<dim>                        zero_function;
-
-  //   boundary_functions[0] = &function_g;
-  //   boundary_functions[1] = &function_g;
-  //   boundary_functions[2] = &function_g;
-  //   boundary_functions[3] = &function_g;
-
-  //   VectorTools::interpolate_boundary_values(dof_handler,
-  //                                            boundary_functions,
-  //                                            boundary_values);
-
-  //   MatrixTools::apply_boundary_values(
-  //     boundary_values, jacobian_matrix, delta_owned, residual_vector, false);
-  // }
 }
 
 template <int dim>
@@ -287,29 +286,14 @@ void FisherKol<dim>::solve_linear_system()
 template <int dim>
 void FisherKol<dim>::solve_newton()
 {
-  const unsigned int n_max_iters        = 1000;
-  const double       residual_tolerance = 1e-3;
+  const unsigned int n_max_iters        = 100;
+  const double       residual_tolerance = 1e-6;
 
   unsigned int n_iter        = 0;
   double       residual_norm = residual_tolerance + 1;
 
   // We apply the boundary conditions to the initial guess (which is stored in
   // solution_owned and solution).
-  // {
-  //   IndexSet dirichlet_dofs = DoFTools::extract_boundary_dofs(dof_handler);
-  //   dirichlet_dofs          = dirichlet_dofs & dof_handler.locally_owned_dofs();
-
-  //   function_g.set_time(time);
-
-  //   TrilinosWrappers::MPI::Vector vector_dirichlet(solution_owned);
-  //   VectorTools::interpolate(dof_handler, function_g, vector_dirichlet);
-
-  //   for (const auto &idx : dirichlet_dofs)
-  //     solution_owned[idx] = vector_dirichlet[idx];
-
-  //   solution_owned.compress(VectorOperation::insert);
-  //   solution = solution_owned;
-  // }
   {
     IndexSet neumann_dofs = DoFTools::extract_boundary_dofs(dof_handler);
     neumann_dofs          = neumann_dofs & dof_handler.locally_owned_dofs();
@@ -393,6 +377,8 @@ void FisherKol<dim>::solve()
 
   unsigned int time_step = 0;
 
+  const double T = parameters.get_double("T");
+  const double deltat = parameters.get_double("deltat");
   while (time < T - 0.5 * deltat)
     {
       time += deltat;
@@ -419,6 +405,8 @@ double FisherKol<dim>::compute_error(const VectorTools::NormType &norm_type)
 {
   FE_SimplexP<dim> fe_linear(1);
   MappingFE mapping(fe_linear);
+
+  const unsigned int r = parameters.get_integer("degree");
 
   const QGaussSimplex<dim> quadrature_error = QGaussSimplex<dim>(r + 2);
 

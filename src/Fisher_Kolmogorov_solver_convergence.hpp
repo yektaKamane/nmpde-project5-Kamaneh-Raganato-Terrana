@@ -47,25 +47,88 @@ class FisherKol
 {
 public:
   // Function for the alpha coefficient.
-  class FunctionAlpha : public Function<dim>
-  {
-  public:
-    virtual double
-    value(const Point<dim> & /*p*/,
-          const unsigned int /*component*/ = 0) const override
-    {
-      return 1.0;
-    }
-  };
+  // class FunctionAlpha : public Function<dim>
+  // {
+  // public:
+  //   virtual double
+  //   value(const Point<dim> & /*p*/,
+  //         const unsigned int /*component*/ = 0) const override
+  //   {
+  //     if (dim == 2) {
+  //       return 1.0;
+  //     }
+
+  //     if (dim == 3) {
+  //       return 0.1;
+  //     }
+  //   }
+  // };
   
   // Function of the fiber field
   class FunctionN
   {
   public:
     Tensor<2, dim>
-    isotropic(const Point<dim> & p) const
+    isotropic(const Point<dim> & /*p*/) const
+    {
+      // Tensor<2, dim> values;
+      // for (unsigned int i = 0; i < dim; ++i)
+      //   values[i][i] = 0.0;
+      // return values;
+
+      Tensor<1, dim> n;
+      for (unsigned int i = 0; i < dim; ++i)
+        n[i] = 0.0;
+      return outer_product(n, n);
+    }
+
+    Tensor<2, dim>
+    anisotropic_x(const Point<dim> & /*p*/) const
+    {
+      // Tensor<2, dim> values;
+      // for (unsigned int i = 0; i < dim; ++i)
+      //   values[i][i] = 0.0;
+      // return values;
+
+      Tensor<1, dim> n;
+      n[0] = 1.0;
+      n[1] = 0.0;
+      return outer_product(n, n); // {{1, 0}, {0, 0}}
+    }
+
+    Tensor<2, dim>
+    anisotropic_y(const Point<dim> & /*p*/) const
+    {
+      // Tensor<2, dim> values;
+      // for (unsigned int i = 0; i < dim; ++i)
+      //   values[i][i] = 0.0;
+      // return values;
+
+      Tensor<1, dim> n;
+      n[0] = 0.0;
+      n[1] = 1.0;
+      return outer_product(n, n); // {{0, 0}, {0, 1}}
+    }
+
+    Tensor<2, dim>
+    circumferential(const Point<dim> & p) const
+    {
+      Tensor<1, dim> n;
+      // x = rho * cos(theta), y = rho * sin(theta)
+      double rho = std::sqrt(p[0]*p[0] + p[1]*p[1]);
+      double theta = std::atan2(p[1], p[0]);
+      n[0] = -std::sin(theta);
+      n[1] = std::cos(theta);
+      // n[0] = rho * std::cos(theta);
+      // n[1] = rho * std::sin(theta);
+      return outer_product(n, n);
+    }
+
+    Tensor<2, dim>
+    radial(const Point<dim> & p) const
     {
       Tensor<2, dim> values;
+      Tensor<1, dim> n;
       for (unsigned int i = 0; i < dim; ++i)
       {
         values[i][i] = 0.0;
@@ -73,24 +136,35 @@ public:
       return values;
     }
 
-  };
-
-  // Function of the matrix D
-  class FunctionD
-  {
-  public:
-    Tensor<2, dim> matrix_value(const Point<dim> & /*p ,
-                   Tensor<2,dim> &values */) const
+    Tensor<2, dim>
+    axon_based(const Point<dim> & p) const
     {
       Tensor<2, dim> values;
+      Tensor<1, dim> n;
       for (unsigned int i = 0; i < dim; ++i)
       {
-        values[i][i] = 1.0;
+        values[i][i] = 0.0;
       }
-      // values[1][1] += 10.0;
       return values;
     }
   };
+
+  // Function of the matrix D
+  // class FunctionD
+  // {
+  // public:
+  //   Tensor<2, dim> matrix_value(const Point<dim> & /*p ,
+  //                  Tensor<2,dim> &values */) const
+  //   {
+  //     Tensor<2, dim> values;
+  //     for (unsigned int i = 0; i < dim; ++i)
+  //     {
+  //       values[i][i] = 1.0;
+  //     }
+  //     // values[1][1] += 10.0;
+  //     return values;
+  //   }
+  // };
 
   // Function for the forcing term.
   class ForcingTerm : public Function<dim>
@@ -100,103 +174,26 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      double temp_val = std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]);
-      if (dim == 2) 
-        // return ((2 * M_PI * M_PI - 1) * temp_val - 2) * std::exp(-this->get_time()) +
-        //        (temp_val*temp_val + 3*temp_val + 2)* std::exp(-this->get_time() * 2);
-        return -2 * M_PI * M_PI * temp_val * std::exp(-this->get_time()) -
-               (temp_val * temp_val + 4 - 4 * temp_val) * std::exp(-this->get_time() * 2);
+      // Forcing term for the convergence test.
+      // double temp_val = std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]);
 
-      if (dim == 3)
-        return 0.0;
+      // if (dim == 2)
+      //   return -2 * M_PI * M_PI * temp_val * std::exp(-this->get_time()) -
+      //          (temp_val * temp_val - 4 * temp_val + 4) * std::exp(-this->get_time() * 2);
 
-      else return 0.0;
+      // if (dim == 3)
+      // {
+      //   temp_val = temp_val * std::cos(M_PI * p[2]);
+      //   return 0.1 * temp_val * temp_val * std::exp(-this->get_time() * 2) +
+      //          (3 * M_PI * M_PI - 1.1) * temp_val * std::exp(-this->get_time());
+      // }
+
+      // else return 0.0;
+
+      // Forcing term for exploring the behavior in the axonal direction.
+      return 0.0;
     }
   };
-
-  // Function for Dirichlet boundary conditions.
-  // class FunctionG : public Function<dim>
-  // {
-  // public:
-  //   // Constructor.
-  //   FunctionG()
-  //   {}
-
-  //   virtual double
-  //   value(const Point<dim> & p,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     if (p[0]==0 && p[1]>=0 && p[1]<=1)
-  //       return (+std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
-  //     else if (p[0]==1 && p[1]>=0 && p[1]<=1)
-  //       return (-std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
-  //     else if (p[1]==0 && p[0]>=0 && p[0]<=1)
-  //       return (+std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
-  //     else if (p[1]==1 && p[0]>=0 && p[0]<=1)
-  //       return (-std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
-      
-  //   }
-  // };
-
-  // class FunctionG0 : public Function<dim>
-  // {
-  // public:
-  //   // Constructor.
-  //   FunctionG0()
-  //   {}
-
-  //   virtual double
-  //   value(const Point<dim> & p,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return (+std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
-  //   }
-  // };
-
-  // class FunctionG1 : public Function<dim>
-  // {
-  // public:
-  //   // Constructor.
-  //   FunctionG1()
-  //   {}
-
-  //   virtual double
-  //   value(const Point<dim> & p,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return (-std::cos(M_PI * p[1]) + 2) * std::exp(-this->get_time());
-  //   }
-  // };
-
-  // class FunctionG2 : public Function<dim>
-  // {
-  // public:
-  //   // Constructor.
-  //   FunctionG2()
-  //   {}
-
-  //   virtual double
-  //   value(const Point<dim> & p,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return (+std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
-  //   }
-  // };
-
-  // class FunctionG3 : public Function<dim>
-  // {
-  // public:
-  //   // Constructor.
-  //   FunctionG3()
-  //   {}
-
-  //   virtual double
-  //   value(const Point<dim> & p,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return (-std::cos(M_PI * p[0]) + 2) * std::exp(-this->get_time());
-  //   }
-  // };
 
   // Function for Neumann boundary condition.
   class FunctionH : public Function<dim>
@@ -223,22 +220,29 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      // if (dim == 2){
-      //   if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
-      //     return 0.1;
-      // }
+      // Initial condition for the convergence test.
+      // if (dim == 2)
+      //   return std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]) + 2;
 
-      // if (dim == 3){
-      //   if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 && p[2] < 50.0 && p[2] > 40.0)
-      //     return 0.95;
-      // }
+      // if (dim == 3)
+      //   return std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]) * std::cos(M_PI * p[2]);
 
-      if (dim == 2) {
-        return std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]) + 2;
+      // Initial condition for exploring the behavior in the axonal direction.
+      if (dim == 2)
+      {
+        if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
+          return 0.1;
       }
 
-      if (dim == 3) {
-        return 0.0;
+      if (dim == 3)
+      {
+        // Use this initial condition with the brain mesh.
+        // if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 && p[2] < 50.0 && p[2] > 40.0)
+        //   return 0.95;
+
+        // Use this initial condition with the cube mesh.
+        if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
+          return 0.1;
       }
 
       return 0.0;
@@ -254,11 +258,11 @@ public:
           const unsigned int /*component*/ = 0) const override
     {
       double temp_val = std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]);
-      if (dim == 2) 
+      if (dim == 2)
         return (temp_val + 2) * std::exp(-this->get_time());
 
       if (dim == 3)
-        return (temp_val * std::cos(M_PI * p[2])) * std::exp(-this->get_time());
+        return temp_val * std::cos(M_PI * p[2]) * std::exp(-this->get_time());
 
       else return 0.0;
       
@@ -295,24 +299,28 @@ public:
   // Constructor. We provide the final time, time step Delta t and theta method
   // parameter as constructor arguments.
   FisherKol(const std::string  &mesh_file_name_,
-                const unsigned int &r_,
-                const double       &T_,
-                const double       &deltat_,
+                // const unsigned int &r_,
+                // const double       &T_,
+                // const double       &deltat_,
                 const std::string  &prm_file_)
     : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
     , mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD))
     , pcout(std::cout, mpi_rank == 0)
-    , T(T_)
+    // , T(T_)
     , mesh_file_name(mesh_file_name_)
-    , r(r_)
-    , deltat(deltat_)
+    // , r(r_)
+    // , deltat(deltat_)
     , prm_file(prm_file_)
     , mesh(MPI_COMM_WORLD)
   {
-      parameters.declare_entry("coef_alpha", "1.0", Patterns::Double(), "dummy");
-      parameters.declare_entry("coef_dext", "1.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("coef_alpha", "0.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("coef_dext", "0.0", Patterns::Double(), "dummy");
       parameters.declare_entry("coef_daxn", "0.0", Patterns::Double(), "dummy");
       parameters.declare_entry("fib", "0", Patterns::Integer(), "dummy");
+
+      parameters.declare_entry("T", "0.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("deltat", "0.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("degree", "0", Patterns::Integer(), "dummy");
 
       parameters.parse_input(prm_file);
   }
@@ -361,23 +369,16 @@ protected:
   // Problem definition. ///////////////////////////////////////////////////////
 
   // alpha coefficient.
-  FunctionAlpha alpha;
+  // FunctionAlpha alpha;
 
   // ...
   FunctionN fiber;
 
   // matrix D.
-  FunctionD D;
+  // FunctionD D;
 
   // Forcing term.
   ForcingTerm forcing_term;
-
-  // Dirichlet boundary conditions.
-  // FunctionG function_g;
-  // FunctionG0 function_g0;
-  // FunctionG1 function_g1;
-  // FunctionG2 function_g2;
-  // FunctionG3 function_g3;
 
   // Neumann boundary condition.
   FunctionH function_h;
@@ -392,7 +393,7 @@ protected:
   double time;
 
   // Final time.
-  const double T;
+  // const double T;
 
   // Discretization. ///////////////////////////////////////////////////////////
 
@@ -400,10 +401,10 @@ protected:
   const std::string mesh_file_name;
 
   // Polynomial degree.
-  const unsigned int r;
+  // const unsigned int r;
 
   // Time step.
-  const double deltat;
+  // const double deltat;
 
   const std::string prm_file;
 
