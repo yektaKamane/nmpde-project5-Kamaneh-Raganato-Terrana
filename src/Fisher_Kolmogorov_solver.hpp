@@ -61,13 +61,18 @@ public:
   class FunctionU0 : public Function<dim>
   {
   public:
+
+    /* NEW */
+    FunctionU0(const FisherKol<dim> &fisher_kol) : fisher_kol(fisher_kol) {}
+
     virtual double
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
       if (dim == 2){
         if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
-          return 0.1;
+        // const double alpha = fisher_kol.parameters.get_double("coef_alpha");
+          return 0.95;
       }
 
       if (dim == 3){
@@ -77,6 +82,11 @@ public:
 
       return 0.0;
     }
+    
+    /*NEW*/
+    private:
+      const FisherKol<dim> &fisher_kol;  // Added member to store reference to FisherKol
+  
   };
 
    // Exact solution
@@ -142,6 +152,8 @@ public:
     // , deltat(deltat_)
     , prm_file(prm_file_)
     , mesh(MPI_COMM_WORLD)
+    /*NEW*/
+    , u_0(*this) // Changed: Pass reference of this to u_0
   {
       parameters.declare_entry("coef_alpha", "1.0", Patterns::Double(), "dummy");
       parameters.declare_entry("coef_dext", "1.0", Patterns::Double(), "dummy");
