@@ -69,21 +69,27 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
+      const double radius = fisher_kol.parameters.get_double("radius");
+      const double center_x = fisher_kol.parameters.get_double("center_x");
+      const double center_y = fisher_kol.parameters.get_double("center_y");
+      const double temp = (p[0] - center_x)*(p[0] - center_x) + (p[1] - center_y)*(p[1] - center_y);
+      double distance = 0.0;
+
       if (dim == 2){
-        if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
-        // const double alpha = fisher_kol.parameters.get_double("coef_alpha");
-          return 0.95;
+        distance = std::sqrt(temp);
       }
 
       if (dim == 3){
-        if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 && p[2] < 50.0 && p[2] > 40.0)
-          return 0.95;
+        const double center_z = fisher_kol.parameters.get_double("center_z");
+        distance = std::sqrt(temp + (p[2] - center_z)*(p[2] - center_z));
       }
 
-      return 0.0;
+      if (distance <= radius)
+        return 0.95;
+      else
+        return 0.0;
     }
     
-    /*NEW*/
     private:
       const FisherKol<dim> &fisher_kol;  // Added member to store reference to FisherKol
   
@@ -163,6 +169,11 @@ public:
       parameters.declare_entry("T", "0", Patterns::Double(), "dummy");
       parameters.declare_entry("deltat", "0", Patterns::Double(), "dummy");
       parameters.declare_entry("degree", "0", Patterns::Integer(), "dummy");
+
+      parameters.declare_entry("radius", "10.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("center_x", "0.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("center_y", "0.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("center_z", "0.0", Patterns::Double(), "dummy");
 
       parameters.parse_input(prm_file);
   }
