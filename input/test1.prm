@@ -2,7 +2,7 @@
 # ---------------------
 
 set coef_alpha = 1.0
-set coef_dext = 0.001
+set coef_dext = 0.0001
 set coef_daxn = 1.0
 
 set fib = 0
@@ -11,7 +11,7 @@ set deltat = 0.1
 
 set degree = 1
 
-set radius = 10.0
+set radius = 0.05
 set center_x = 0.0
 set center_y = 0.0
 

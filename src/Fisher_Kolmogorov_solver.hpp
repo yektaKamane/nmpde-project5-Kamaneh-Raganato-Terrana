@@ -74,18 +74,21 @@ public:
       const double center_y = fisher_kol.parameters.get_double("center_y");
       const double temp = (p[0] - center_x)*(p[0] - center_x) + (p[1] - center_y)*(p[1] - center_y);
       double distance = 0.0;
+      double gaussian = 0.0;
 
       if (dim == 2){
         distance = std::sqrt(temp);
+        gaussian = exp(- ((p[0] - center_x)*(p[0] - center_x) + (p[1] - center_y)*(p[1] - center_y))/( 2 *radius/3*radius/3));
       }
 
       if (dim == 3){
         const double center_z = fisher_kol.parameters.get_double("center_z");
         distance = std::sqrt(temp + (p[2] - center_z)*(p[2] - center_z));
+        gaussian = exp(- ((p[0] - center_x)*(p[0] - center_x) + (p[1] - center_y)*(p[1] - center_y) + (p[2] - center_z)*(p[2] - center_z))/( 2 *radius/3*radius/3));
       }
 
       if (distance <= radius)
-        return 0.95;
+        return gaussian;
       else
         return 0.0;
     }
