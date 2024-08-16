@@ -242,11 +242,7 @@ void FisherKol<dim>::assemble_system()
               // If current face lies on the boundary, and its boundary ID (or
               // tag) is that of one of the Neumann boundaries, we assemble the
               // boundary integral.
-              if (cell->face(face_number)->at_boundary() /* &&
-                  (cell->face(face_number)->boundary_id() == 0 ||
-                   cell->face(face_number)->boundary_id() == 1 ||
-                   cell->face(face_number)->boundary_id() == 2 ||
-                   cell->face(face_number)->boundary_id() == 3)*/)
+              if (cell->face(face_number)->at_boundary())
                 {
                   fe_values_boundary.reinit(cell, face_number);
 

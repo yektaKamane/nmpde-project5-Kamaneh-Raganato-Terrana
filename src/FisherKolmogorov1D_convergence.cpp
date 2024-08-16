@@ -57,6 +57,7 @@ void FisherKol<dim>::setup()
   {
     pcout << "Initializing the finite element space" << std::endl;
 
+    const unsigned int r = parameters.get_integer("degree");
     fe = std::make_unique<FE_Q<dim>>(r);
 
     pcout << "  Degree                     = " << fe->degree << std::endl;
@@ -129,7 +130,11 @@ void FisherKol<dim>::assemble_system()
 
   // Since we need to compute integrals on the boundary for Neumann conditions,
   // we also need a FEValues object to compute quantities on boundary edges.
-
+  FEFaceValues<dim> fe_values_boundary(*fe,
+                                      *quadrature_boundary,
+                                      update_values |
+                                        update_quadrature_points |
+                                        update_JxW_values);
 
   FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
   Vector<double>     cell_residual(dofs_per_cell);
@@ -149,10 +154,11 @@ void FisherKol<dim>::assemble_system()
   forcing_term.set_time(time);
 
   // The coefficients are constant throughout the program
-  const double alpha_loc = parameters.get_double("coef_alpha");
+  const double alpha = parameters.get_double("coef_alpha");
   const double d_ext = parameters.get_double("coef_dext");
   const double d_axn = parameters.get_double("coef_daxn");
-
+  const double deltat = parameters.get_double("deltat");
+  const int    fib    = parameters.get_integer("fib");
   Tensor<2, dim> D_matrix;
   for (unsigned int i = 0; i < dim; ++i){
     D_matrix[i][i] = d_ext;
@@ -178,7 +184,12 @@ void FisherKol<dim>::assemble_system()
           // const double alpha_loc = alpha.value(fe_values.quadrature_point(q));
           // const Tensor<2, dim> D_matrix = D.matrix_value(fe_values.quadrature_point(q));
 
-          Tensor<2, dim> temp = fiber.isotropic(fe_values.quadrature_point(q));
+          // Tensor<2, dim> temp = fiber.isotropic(fe_values.quadrature_point(q));
+
+
+          // Step 2 of assembling the diffusion coefficient matrix.
+          Tensor<2, dim> temp;
+          temp = fiber.isotropic(fe_values.quadrature_point(q));
 
           D_matrix += d_axn * temp;
 
@@ -193,12 +204,12 @@ void FisherKol<dim>::assemble_system()
                                fe_values.shape_value(j, q) / deltat *
                                fe_values.JxW(q);
 
-                  cell_matrix(i, j) -= alpha_loc *
+                  cell_matrix(i, j) -= alpha *
                                       fe_values.shape_value(j, q) *
                                       fe_values.shape_value(i, q) *
                                       fe_values.JxW(q);
 
-                  cell_matrix(i, j) += 2.0 * alpha_loc *
+                  cell_matrix(i, j) += 2.0 * alpha *
                                       solution_loc[q] *
                                       fe_values.shape_value(j, q) *
                                       fe_values.shape_value(i, q) *
@@ -228,7 +239,7 @@ void FisherKol<dim>::assemble_system()
                     fe_values.JxW(q);
 
               // second term.
-              cell_residual(i) += alpha_loc *
+              cell_residual(i) += alpha *
                                   solution_loc[q] *
                                   (1.0 - solution_loc[q]) *
                                   fe_values.shape_value(i, q) * 
@@ -250,11 +261,7 @@ void FisherKol<dim>::assemble_system()
               // If current face lies on the boundary, and its boundary ID (or
               // tag) is that of one of the Neumann boundaries, we assemble the
               // boundary integral.
-              if (cell->face(face_number)->at_boundary() &&
-                  (cell->face(face_number)->boundary_id() == 0 ||
-                   cell->face(face_number)->boundary_id() == 1 ||
-                   cell->face(face_number)->boundary_id() == 2 ||
-                   cell->face(face_number)->boundary_id() == 3))
+              if (cell->face(face_number)->at_boundary())
                 {
                   fe_values_boundary.reinit(cell, face_number);
 
@@ -275,14 +282,12 @@ void FisherKol<dim>::assemble_system()
 
   jacobian_matrix.compress(VectorOperation::add);
   residual_vector.compress(VectorOperation::add);
-
-
 }
 
 template <int dim>
 void FisherKol<dim>::solve_linear_system()
 {
-  SolverControl solver_control(100000, 1e-12 * residual_vector.l2_norm());
+  SolverControl solver_control(10000, 1e-12 * residual_vector.l2_norm());
 
   SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
   // TrilinosWrappers::PreconditionSSOR      preconditioner;
@@ -298,7 +303,7 @@ void FisherKol<dim>::solve_linear_system()
 template <int dim>
 void FisherKol<dim>::solve_newton()
 {
-  const unsigned int n_max_iters        = 1000;
+  const unsigned int n_max_iters        = 100;
   const double       residual_tolerance = 1e-6;
 
   unsigned int n_iter        = 0;
@@ -335,8 +340,10 @@ void FisherKol<dim>::solve_newton()
       // tolerance.
       if (residual_norm > residual_tolerance)
         {
+          // Step 1 of the Newton method.
           solve_linear_system();
 
+          // Step 2 of the Newton method.
           solution_owned += delta_owned;
           solution = solution_owned;
         }
@@ -387,6 +394,8 @@ void FisherKol<dim>::solve()
 
   unsigned int time_step = 0;
 
+  const double T = parameters.get_double("T");
+  const double deltat = parameters.get_double("deltat");
   while (time < T - 0.5 * deltat)
     {
       time += deltat;
@@ -413,6 +422,8 @@ double FisherKol<dim>::compute_error(const VectorTools::NormType &norm_type)
 {
   FE_Q<dim> fe_linear(1);
   MappingFE mapping(fe_linear);
+
+  const unsigned int r = parameters.get_integer("degree");
 
   const QGauss<dim> quadrature_error = QGauss<dim>(r + 2);
 

@@ -8,11 +8,50 @@
 
 // Main function.
 int
-main(int argc, char * argv[])
+main(int argc, char *argv[])
 {
   Utilities::MPI::MPI_InitFinalize mpi_init(argc, argv);
   const unsigned int               mpi_rank =
     Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+
+    // Check if the correct number of command-line arguments is provided
+  if (argc < 3)
+  {
+    std::cerr << "Usage: " << argv[0] << " <dimension> <mesh_file> [parameter_file]" << std::endl;
+    return 1;
+  }
+
+  // Read the mandatory dimension from command line arguments and convert to unsigned int
+  unsigned int dim = 1; // Default dimension for this 1D convergence test
+  try
+  {
+    dim = std::stoul(argv[1]);
+  }
+  catch (const std::invalid_argument &)
+  {
+    std::cerr << "Invalid dimension: " << argv[1] << ". Must be a positive integer." << std::endl;
+    return 1;
+  }
+  catch (const std::out_of_range &)
+  {
+    std::cerr << "Dimension out of range: " << argv[1] << std::endl;
+    return 1;
+  }
+
+  // Read the mandatory mesh file name from command line arguments
+   // But here we use the meshes listed below
+  std::string mesh_file = argv[2];
+
+  // Read the optional parameter file name or use a default value
+  std::string parameter_file;
+  if (argc >= 4)
+  {
+    parameter_file = argv[3];
+  }
+  else
+  {
+    parameter_file = "../input/test1D_convergence.prm"; // Default parameter file
+  }
   
   // const std::vector<int> N_vals = {200,
   //                                  400,
@@ -31,17 +70,12 @@ main(int argc, char * argv[])
                                       1/100,
                                       1/200};
 
-  const unsigned int dim = 1;
-  const unsigned int r   = 1;
-  const double T         = 20.0;
-  const double deltat    = 0.1;
-
   std::vector<double> errors_L2;
   std::vector<double> errors_H1;
 
   for (unsigned int i = 0; i < N_vals.size(); ++i)
     {
-      FisherKol<dim> problem(N_vals[i], r, T, deltat, "../input/test1.prm");
+      FisherKol<dim> problem(N_vals[i], "../input/test1.prm");
 
       problem.setup();
       problem.solve();

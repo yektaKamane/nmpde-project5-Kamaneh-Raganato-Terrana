@@ -15,6 +15,46 @@ main(int argc, char *argv[])
   const unsigned int               mpi_rank =
     Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
 
+  // Check if the correct number of command-line arguments is provided
+  if (argc < 3)
+  {
+    std::cerr << "Usage: " << argv[0] << " <dimension> <mesh_file> [parameter_file]" << std::endl;
+    return 1;
+  }
+
+  // Read the mandatory dimension from command line arguments and convert to unsigned int
+  unsigned int dim = 3; // Default dimension for this 3D convergence test
+  try
+  {
+    dim = std::stoul(argv[1]);
+  }
+  catch (const std::invalid_argument &)
+  {
+    std::cerr << "Invalid dimension: " << argv[1] << ". Must be a positive integer." << std::endl;
+    return 1;
+  }
+  catch (const std::out_of_range &)
+  {
+    std::cerr << "Dimension out of range: " << argv[1] << std::endl;
+    return 1;
+  }
+
+  // Read the mandatory mesh file name from command line arguments
+   // But here we use the meshes listed below
+  std::string mesh_file = argv[2];
+
+  // Read the optional parameter file name or use a default value
+  std::string parameter_file;
+  if (argc >= 4)
+  {
+    parameter_file = argv[3];
+  }
+  else
+  {
+    parameter_file = "../input/test3D_convergence.prm"; // Default parameter file
+  }
+
+
   const std::vector<std::string> meshes = {"../mesh/mesh-cube-5.msh",
                                            "../mesh/mesh-cube-10.msh",
                                            "../mesh/mesh-cube-20.msh",
@@ -23,20 +63,13 @@ main(int argc, char *argv[])
                                            1.0 / 10.0,
                                            1.0 / 20.0,
                                            1.0 / 40.0};
-  
-  const unsigned int dim = 3;
-  const unsigned int degree = 1;
-
-  const double T      = 1e-3;
-  const double deltat = 1e-6;
-  // const double theta  = 0.5;
 
   std::vector<double> errors_L2;
   std::vector<double> errors_H1;
 
   for (unsigned int i = 0; i < meshes.size(); ++i)
     {
-      FisherKol<dim> problem(meshes[i], degree, T, deltat, "../input/test1.prm");
+      FisherKol<dim> problem(meshes[i], "../input/test1.prm");
 
       problem.setup();
       problem.solve();

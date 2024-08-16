@@ -5,7 +5,8 @@
 #include "Fisher_Kolmogorov_solver_convergence.hpp"
 
 // Main function.
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
   Utilities::MPI::MPI_InitFinalize mpi_init(argc, argv);
 
@@ -65,6 +66,8 @@ int main(int argc, char *argv[])
     std::cerr << "Unsupported dimension: " << dim << ". Only 2 and 3 are supported." << std::endl;
     return 1;
   }
+
+
 
   return 0;
 }

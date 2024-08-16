@@ -175,23 +175,23 @@ public:
           const unsigned int /*component*/ = 0) const override
     {
       // Forcing term for the convergence test.
-      // double temp_val = std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]);
+      double temp_val = std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]);
 
-      // if (dim == 2)
-      //   return -2 * M_PI * M_PI * temp_val * std::exp(-this->get_time()) -
-      //          (temp_val * temp_val - 4 * temp_val + 4) * std::exp(-this->get_time() * 2);
+      if (dim == 2)
+        return -2 * M_PI * M_PI * temp_val * std::exp(-this->get_time()) -
+               (temp_val * temp_val - 4 * temp_val + 4) * std::exp(-this->get_time() * 2);
 
-      // if (dim == 3)
-      // {
-      //   temp_val = temp_val * std::cos(M_PI * p[2]);
-      //   return 0.1 * temp_val * temp_val * std::exp(-this->get_time() * 2) +
-      //          (3 * M_PI * M_PI - 1.1) * temp_val * std::exp(-this->get_time());
-      // }
+      if (dim == 3)
+      {
+        temp_val = temp_val * std::cos(M_PI * p[2]);
+        return 0.1 * temp_val * temp_val * std::exp(-this->get_time() * 2) +
+               (3 * M_PI * M_PI - 1.1) * temp_val * std::exp(-this->get_time());
+      }
 
-      // else return 0.0;
+      else return 0.0;
 
       // Forcing term for exploring the behavior in the axonal direction.
-      return 0.0;
+      // return 0.0;
     }
   };
 

@@ -43,50 +43,47 @@ public:
   // static constexpr unsigned int dim = 1; // MODIFIED
 
   // Function for the alpha coefficient.
-  class FunctionAlpha : public Function<dim>
-  {
-  public:
-    virtual double
-    value(const Point<dim> & /*p*/,
-          const unsigned int /*component*/ = 0) const override
-    {
-      return 2.0;
-    }
-  };
+  // class FunctionAlpha : public Function<dim>
+  // {
+  // public:
+  //   virtual double
+  //   value(const Point<dim> & /*p*/,
+  //         const unsigned int /*component*/ = 0) const override
+  //   {
+  //     return 2.0;
+  //   }
+  // };
   
   // Function of the fiber field
   class FunctionN
   {
   public:
     Tensor<2, dim>
-    isotropic(const Point<dim> & p) const
+    isotropic(const Point<dim> & /*p*/) const
     {
-      Tensor<2, dim> values;
+      Tensor<1, dim> n;
       for (unsigned int i = 0; i < dim; ++i)
-      {
-        values[i][i] = 0.0;
-      }
-      return values;
-    }
-
-  };
-
-  // Function of the matrix D
-  class FunctionD
-  {
-  public:
-    Tensor<2, dim> matrix_value(const Point<dim> & /*p*/ /* ,
-                   Tensor<2,dim> &values */) const
-    {
-      Tensor<2, dim> values;
-      for (unsigned int i = 0; i < dim; ++i)
-      {
-        values[i][i] = 0.0002;
-      }
-      // values[1][1] += 10.0;
-      return values;
+        n[i] = 0.0;
+      return outer_product(n, n);
     }
   };
+
+  // // Function of the matrix D
+  // class FunctionD
+  // {
+  // public:
+  //   Tensor<2, dim> matrix_value(const Point<dim> & /*p*/ /* ,
+  //                  Tensor<2,dim> &values */) const
+  //   {
+  //     Tensor<2, dim> values;
+  //     for (unsigned int i = 0; i < dim; ++i)
+  //     {
+  //       values[i][i] = 0.0002;
+  //     }
+  //     // values[1][1] += 10.0;
+  //     return values;
+  //   }
+  // };
 
   // Function for the forcing term.
   class ForcingTerm : public Function<dim>
@@ -96,24 +93,8 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      // double temp_val = std::cos(M_PI * p[0]) * std::exp(-this->get_time());
-
-      if (dim == 1)
-      {
-        temp_val = std::cos(M_PI * p[0]);
-        return (M_PI * M_PI - 2) * temp_val + temp_val * temp_val;
-      };
-      
-      if (dim == 2) 
-        // return ((2 * M_PI * M_PI - 1) * temp_val - 2) * std::exp(-this->get_time()) +
-        //        (temp_val*temp_val + 3*temp_val + 2)* std::exp(-this->get_time() * 2);
-        return -2 * M_PI * M_PI * temp_val * std::exp(-this->get_time()) -
-               (temp_val * temp_val + 4 - 4 * temp_val) * std::exp(-this->get_time() * 2);
-
-      if (dim == 3)
-        return 0.0;
-
-      else return 0.0;
+      double temp_val = std::cos(M_PI * p[0]);
+      return (M_PI * M_PI - 2) * temp_val + temp_val * temp_val;
     }
   };
 
@@ -202,24 +183,28 @@ public:
   // Constructor. We provide the final time, time step Delta t and theta method
   // parameter as constructor arguments.
   FisherKol(const unsigned int N_,
-                const unsigned int &r_,
-                const double       &T_,
-                const double       &deltat_,
+                // const unsigned int &r_,
+                // const double       &T_,
+                // const double       &deltat_,
                 const std::string  &prm_file_)
     : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
     , mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD))
     , pcout(std::cout, mpi_rank == 0)
-    , T(T_)
+    // , T(T_)
     , N(N_)
-    , r(r_)
-    , deltat(deltat_)
+    // , r(r_)
+    // , deltat(deltat_)
     , prm_file(prm_file_)
     , mesh(MPI_COMM_WORLD)
   {
-      parameters.declare_entry("coef_alpha", "1.0", Patterns::Double(), "dummy");
-      parameters.declare_entry("coef_dext", "1.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("coef_alpha", "0.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("coef_dext", "0.0", Patterns::Double(), "dummy");
       parameters.declare_entry("coef_daxn", "0.0", Patterns::Double(), "dummy");
       parameters.declare_entry("fib", "0", Patterns::Integer(), "dummy");
+
+      parameters.declare_entry("T", "0.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("deltat", "0.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("degree", "0", Patterns::Integer(), "dummy");
 
       parameters.parse_input(prm_file);
   }
@@ -267,13 +252,13 @@ protected:
   // Problem definition. ///////////////////////////////////////////////////////
 
   // alpha coefficient.
-  FunctionAlpha alpha;
+  // FunctionAlpha alpha;
 
   // ...
   FunctionN fiber;
 
   // matrix D.
-  FunctionD D;
+  // FunctionD D;
 
   // Forcing term.
   ForcingTerm forcing_term;
@@ -294,7 +279,7 @@ protected:
   double time;
 
   // Final time.
-  const double T;
+  // const double T;
 
   // Number of elements.
   const unsigned int N;
@@ -305,10 +290,10 @@ protected:
   // const std::string mesh_file_name;
 
   // Polynomial degree.
-  const unsigned int r;
+  // const unsigned int r;
 
   // Time step.
-  const double deltat;
+  // const double deltat;
 
   const std::string prm_file;
 
