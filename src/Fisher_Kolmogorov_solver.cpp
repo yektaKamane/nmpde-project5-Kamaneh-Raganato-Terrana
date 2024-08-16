@@ -8,7 +8,7 @@ void FisherKol<dim>::setup()
 {
   // Create the mesh.
   {
-    pcout << "Initializing the mesh" << std::endl;
+    // pcout << "Initializing the mesh" << std::endl;
 
     Triangulation<dim> mesh_serial;
 
@@ -27,30 +27,30 @@ void FisherKol<dim>::setup()
           << std::endl;
   }
 
-  pcout << "-----------------------------------------------" << std::endl;
+  // pcout << "-----------------------------------------------" << std::endl;
 
   // Initialize the finite element space.
   {
-    pcout << "Initializing the finite element space" << std::endl;
+    // pcout << "Initializing the finite element space" << std::endl;
 
     const unsigned int r = parameters.get_integer("degree");
     fe = std::make_unique<FE_SimplexP<dim>>(r);
 
-    pcout << "  Degree                     = " << fe->degree << std::endl;
-    pcout << "  DoFs per cell              = " << fe->dofs_per_cell
+    // pcout << "  Degree                     = " << fe->degree << std::endl;
+    // pcout << "  DoFs per cell              = " << fe->dofs_per_cell
           << std::endl;
 
     quadrature = std::make_unique<QGaussSimplex<dim>>(r + 1);
 
-    pcout << "  Quadrature points per cell = " << quadrature->size()
+    // pcout << "  Quadrature points per cell = " << quadrature->size()
           << std::endl;
   }
 
-  pcout << "-----------------------------------------------" << std::endl;
+  // pcout << "-----------------------------------------------" << std::endl;
 
   // Initialize the DoF handler.
   {
-    pcout << "Initializing the DoF handler" << std::endl;
+    // pcout << "Initializing the DoF handler" << std::endl;
 
     dof_handler.reinit(mesh);
     dof_handler.distribute_dofs(*fe);
@@ -61,25 +61,25 @@ void FisherKol<dim>::setup()
     pcout << "  Number of DoFs = " << dof_handler.n_dofs() << std::endl;
   }
 
-  pcout << "-----------------------------------------------" << std::endl;
+  // pcout << "-----------------------------------------------" << std::endl;
 
   // Initialize the linear system.
   {
-    pcout << "Initializing the linear system" << std::endl;
+    // pcout << "Initializing the linear system" << std::endl;
 
-    pcout << "  Initializing the sparsity pattern" << std::endl;
+    // pcout << "  Initializing the sparsity pattern" << std::endl;
 
     TrilinosWrappers::SparsityPattern sparsity(locally_owned_dofs,
                                                MPI_COMM_WORLD);
     DoFTools::make_sparsity_pattern(dof_handler, sparsity);
     sparsity.compress();
 
-    pcout << "  Initializing the matrices" << std::endl;
+    // pcout << "  Initializing the matrices" << std::endl;
     jacobian_matrix.reinit(sparsity);
 
-    pcout << "  Initializing the system right-hand side" << std::endl;
+    // pcout << "  Initializing the system right-hand side" << std::endl;
     residual_vector.reinit(locally_owned_dofs, MPI_COMM_WORLD);
-    pcout << "  Initializing the solution vector" << std::endl;
+    // pcout << "  Initializing the solution vector" << std::endl;
     solution_owned.reinit(locally_owned_dofs, MPI_COMM_WORLD);
     delta_owned.reinit(locally_owned_dofs, MPI_COMM_WORLD);
 
@@ -116,15 +116,7 @@ void FisherKol<dim>::assemble_system()
 
   // The coefficients are constant throughout the program
   const double alpha = parameters.get_double("coef_alpha");
-  // const double d_ext = parameters.get_double("coef_dext");
-  // const double d_axn = parameters.get_double("coef_daxn");
   const double deltat = parameters.get_double("deltat");
-
-  // Tensor<2, dim> D_matrix;
-  // for (unsigned int i = 0; i < dim; ++i){
-  //   D_matrix[i][i] = d_ext;
-  // }
-  // D_matrix[0][0] += d_axn;
 
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
@@ -214,7 +206,7 @@ void FisherKol<dim>::solve_linear_system()
     jacobian_matrix, TrilinosWrappers::PreconditionSSOR::AdditionalData(1.0));
 
   solver.solve(jacobian_matrix, delta_owned, residual_vector, preconditioner);
-  pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;
+  // pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;
 }
 
 template <int dim>
@@ -231,9 +223,9 @@ void FisherKol<dim>::solve_newton()
       assemble_system();
       residual_norm = residual_vector.l2_norm();
 
-      pcout << "  Newton iteration " << n_iter << "/" << n_max_iters
-            << " - ||r|| = " << std::scientific << std::setprecision(6)
-            << residual_norm << std::flush;
+      // pcout << "  Newton iteration " << n_iter << "/" << n_max_iters
+      //       << " - ||r|| = " << std::scientific << std::setprecision(6)
+      //       << residual_norm << std::flush;
 
       // We actually solve the system only if the residual is larger than the
       // tolerance.
@@ -246,7 +238,7 @@ void FisherKol<dim>::solve_newton()
         }
       else
         {
-          pcout << " < tolerance" << std::endl;
+          // pcout << " < tolerance" << std::endl;
         }
 
       ++n_iter;
@@ -273,20 +265,20 @@ void FisherKol<dim>::output(const unsigned int &time_step) const
 template <int dim>
 void FisherKol<dim>::solve()
 {
-  pcout << "===============================================" << std::endl;
+  // pcout << "===============================================" << std::endl;
 
   time = 0.0;
 
   // Apply the initial condition.
   {
-    pcout << "Applying the initial condition" << std::endl;
+    // pcout << "Applying the initial condition" << std::endl;
 
     VectorTools::interpolate(dof_handler, u_0, solution_owned);
     solution = solution_owned;
 
     // Output the initial solution.
     output(0);
-    pcout << "-----------------------------------------------" << std::endl;
+    // pcout << "-----------------------------------------------" << std::endl;
   }
 
   unsigned int time_step = 0;
@@ -301,8 +293,8 @@ void FisherKol<dim>::solve()
       // Store the old solution, so that it is available for assembly.
       solution_old = solution;
 
-      pcout << "n = " << std::setw(3) << time_step << ", t = " << std::setw(5)
-            << std::fixed << time << std::endl;
+      // pcout << "n = " << std::setw(3) << time_step << ", t = " << std::setw(5)
+      //       << std::fixed << time << std::endl;
 
       // At every time step, we invoke Newton's method to solve the non-linear
       // problem.
@@ -310,7 +302,7 @@ void FisherKol<dim>::solve()
 
       output(time_step);
 
-      pcout << std::endl;
+      // pcout << std::endl;
     }
 }
 
