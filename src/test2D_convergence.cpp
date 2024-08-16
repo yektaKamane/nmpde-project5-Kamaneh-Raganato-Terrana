@@ -4,7 +4,8 @@
 #include <iostream>
 #include <vector>
 
-#include "FisherKolmogorov1D_convergence.hpp"
+// #include "Fisher_Kolmogorov_solver.hpp"
+#include "Fisher_Kolmogorov_solver_convergence.hpp"
 
 // Main function.
 int
@@ -14,68 +15,40 @@ main(int argc, char *argv[])
   const unsigned int               mpi_rank =
     Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
 
-    // Check if the correct number of command-line arguments is provided
-  if (argc < 3)
+  // Check if the correct number of command-line arguments is provided
+  if (argc < 2)
   {
-    std::cerr << "Usage: " << argv[0] << " <dimension> <mesh_file> [parameter_file]" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " [parameter_file]" << std::endl;
     return 1;
   }
-
-  // Read the mandatory dimension from command line arguments and convert to unsigned int
-  unsigned int dim = 1; // Default dimension for this 1D convergence test
-  try
-  {
-    dim = std::stoul(argv[1]);
-  }
-  catch (const std::invalid_argument &)
-  {
-    std::cerr << "Invalid dimension: " << argv[1] << ". Must be a positive integer." << std::endl;
-    return 1;
-  }
-  catch (const std::out_of_range &)
-  {
-    std::cerr << "Dimension out of range: " << argv[1] << std::endl;
-    return 1;
-  }
-
-  // Read the mandatory mesh file name from command line arguments
-   // But here we use the meshes listed below
-  std::string mesh_file = argv[2];
 
   // Read the optional parameter file name or use a default value
   std::string parameter_file;
-  if (argc >= 4)
+  if (argc >= 3)
   {
-    parameter_file = argv[3];
+    parameter_file = argv[1];
   }
   else
   {
-    parameter_file = "../input/test1D_convergence.prm"; // Default parameter file
+    parameter_file = "../input/test2D_convergence.prm"; // Default parameter file
   }
-  
-  // const std::vector<int> N_vals = {200,
-  //                                  400,
-  //                                  800,
-  //                                  1600};
-  // const std::vector<double> h_vals = {1/200,
-  //                                     1/400,
-  //                                     1/800,
-  //                                     1/1600};
-    const std::vector<int> N_vals = {25,
-                                     50,
-                                     100,
-                                     200};
-  const std::vector<double> h_vals = {1/25,
-                                      1/50,
-                                      1/100,
-                                      1/200};
+
+  const std::vector<std::string> meshes = {"../mesh/mesh-square-h0.275000.msh",
+                                           "../mesh/mesh-square-h0.150000.msh",
+                                           "../mesh/mesh-square-h0.085000.msh",
+                                           "../mesh/mesh-square-h0.045000.msh"};
+  const std::vector<double>      h_vals = {0.275000,
+                                           0.150000,
+                                           0.085000,
+                                           0.045000};
 
   std::vector<double> errors_L2;
   std::vector<double> errors_H1;
 
-  for (unsigned int i = 0; i < N_vals.size(); ++i)
+  for (unsigned int i = 0; i < meshes.size(); ++i)
     {
-      FisherKol<dim> problem(N_vals[i], "../input/test1.prm");
+      // Default dimension for this 2D convergence test is 2
+      FisherKol<2> problem(meshes[i], parameter_file);
 
       problem.setup();
       problem.solve();
@@ -146,6 +119,4 @@ main(int argc, char *argv[])
 
   return 0;
 }
-
-
 

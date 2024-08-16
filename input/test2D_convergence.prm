@@ -1,11 +1,11 @@
 # Listing of Parameters
 # ---------------------
-set coef_alpha = 0.1
+set coef_alpha = 1.0
 set coef_dext = 1.0
 set coef_daxn = 0.0
 
 set fib = 0
 set T = 1e-3
-set deltat = 1e-5 # 1e-6
+set deltat = 1e-5 # usato 1e-6
 
 set degree = 1
