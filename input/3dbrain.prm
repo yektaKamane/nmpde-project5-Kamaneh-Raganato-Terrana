@@ -12,6 +12,6 @@ set deltat = 0.1
 
 set degree = 1
 
-set radius = 0.05
-set center_coords = 0.0, 0.0, 0.0
+set radius = 5.0
+set center_coords = 65.0, 80.0, 60.0
 
