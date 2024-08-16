@@ -18,4 +18,4 @@ sort ${PBS_NODEFILE} | uniq -c | awk '{printf("%s\n", $2);}' > mpd.nodes
 # Actually run the simulation. The arguments to -n and -npernode should
 # be consistent with the resources requested at the top of the script.
 mpirun -machinefile mpd.nodes -n 20 -npernode 20 \
-solver  &> stdout.txt
+solver 2 ../mesh/ellipse3.msh ../input/diffusion/center.prm  &> stdout.txt
