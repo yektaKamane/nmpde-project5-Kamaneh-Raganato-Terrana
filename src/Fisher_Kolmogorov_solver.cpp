@@ -38,12 +38,12 @@ void FisherKol<dim>::setup()
 
     // pcout << "  Degree                     = " << fe->degree << std::endl;
     // pcout << "  DoFs per cell              = " << fe->dofs_per_cell
-          << std::endl;
+          // << std::endl;
 
     quadrature = std::make_unique<QGaussSimplex<dim>>(r + 1);
 
     // pcout << "  Quadrature points per cell = " << quadrature->size()
-          << std::endl;
+          // << std::endl;
   }
 
   // pcout << "-----------------------------------------------" << std::endl;
