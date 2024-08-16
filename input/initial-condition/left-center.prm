@@ -1,0 +1,17 @@
+# Listing of Parameters
+# ---------------------
+
+set coef_alpha = 1.0
+
+set coef_dext = 0.0001
+set coef_daxn = 0.0
+set normal_vector = 1.0, 0.0, 0.0
+
+set T = 3.0
+set deltat = 0.1
+
+set degree = 1
+
+set radius = 0.1
+set center_coords = 0.0, 0.0, 0.0
+

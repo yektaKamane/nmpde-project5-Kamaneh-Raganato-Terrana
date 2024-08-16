@@ -3,6 +3,7 @@
 
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/quadrature_lib.h>
+#include <deal.II/base/utilities.h>
 
 #include <deal.II/distributed/fully_distributed_tria.h>
 
@@ -44,16 +45,42 @@ public:
   class FunctionN
   {
   public:
+
+    FunctionN(const FisherKol<dim> &fisher_kol) : fisher_kol(fisher_kol) {}
+
     Tensor<2, dim>
-    isotropic(const Point<dim> & /*p*/) const
+    value(const Point<dim> & /*p*/) const
     {
       Tensor<2, dim> values;
-      for (unsigned int i = 0; i < dim; ++i)
+      Tensor<1, dim> n_vector;
+
+      const double d_ext = fisher_kol.parameters.get_double("coef_dext");
+      const double d_axn = fisher_kol.parameters.get_double("coef_daxn");
+
+      std::string list_string = fisher_kol.parameters.get("normal_vector");
+      std::stringstream ss(list_string);
+      std::string item;
+
+      unsigned int index = 0;
+      while (std::getline(ss, item, ','))
       {
-        values[i][i] = 0.0;
-      }
+        n_vector[index] = std::stod(item);
+        index++;
+      } 
+
+      // making sure the vector is normalized
+      const double norm = n_vector.norm();
+      if (norm != 0.0) n_vector /= norm;
+
+      // computing the D_matrix
+      Tensor<2, dim> identity_matrix = unit_symmetric_tensor<dim>();
+      values = d_ext * identity_matrix + d_axn * outer_product(n_vector, n_vector);
+
       return values;
     }
+
+    private:
+      const FisherKol<dim> &fisher_kol;
 
   };
 
@@ -69,22 +96,31 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      const double radius = fisher_kol.parameters.get_double("radius");
-      const double center_x = fisher_kol.parameters.get_double("center_x");
-      const double center_y = fisher_kol.parameters.get_double("center_y");
-      const double temp = (p[0] - center_x)*(p[0] - center_x) + (p[1] - center_y)*(p[1] - center_y);
+      const double radius   = fisher_kol.parameters.get_double("radius");
+      std::string list_string = fisher_kol.parameters.get("center_coords");
+
+      std::vector<double> center;
+      std::stringstream ss(list_string);
+      std::string item;
+
+      while (std::getline(ss, item, ','))
+      {
+        center.push_back(std::stod(item));
+      }
+
+      const double temp = (p[0] - center[0])*(p[0] - center[0]) + (p[1] - center[1])*(p[1] - center[1]);
+      const double sigma = radius/3.0;
       double distance = 0.0;
       double gaussian = 0.0;
 
       if (dim == 2){
         distance = std::sqrt(temp);
-        gaussian = exp(- ((p[0] - center_x)*(p[0] - center_x) + (p[1] - center_y)*(p[1] - center_y))/( 2 *radius/3*radius/3));
+        gaussian = exp(- ((p[0] - center[0])*(p[0] - center[0]) + (p[1] - center[1])*(p[1] - center[1]))/( 2 *sigma*sigma));
       }
 
       if (dim == 3){
-        const double center_z = fisher_kol.parameters.get_double("center_z");
-        distance = std::sqrt(temp + (p[2] - center_z)*(p[2] - center_z));
-        gaussian = exp(- ((p[0] - center_x)*(p[0] - center_x) + (p[1] - center_y)*(p[1] - center_y) + (p[2] - center_z)*(p[2] - center_z))/( 2 *radius/3*radius/3));
+        distance = std::sqrt(temp + (p[2] - center[2])*(p[2] - center[2]));
+        gaussian = exp(- ((p[0] - center[0])*(p[0] - center[0]) + (p[1] - center[1])*(p[1] - center[1]) + (p[2] - center[2])*(p[2] - center[2]))/( 2 *sigma*sigma));
       }
 
       if (distance <= radius)
@@ -162,21 +198,20 @@ public:
     , prm_file(prm_file_)
     , mesh(MPI_COMM_WORLD)
     /*NEW*/
+    , fiber(*this) // Changed: Pass reference of this to fiber
     , u_0(*this) // Changed: Pass reference of this to u_0
   {
       parameters.declare_entry("coef_alpha", "1.0", Patterns::Double(), "dummy");
       parameters.declare_entry("coef_dext", "1.0", Patterns::Double(), "dummy");
       parameters.declare_entry("coef_daxn", "1.0", Patterns::Double(), "dummy");
-      parameters.declare_entry("fib", "0", Patterns::Integer(), "dummy");
+      parameters.declare_entry("normal_vector", "0.0, 0.0, 0.0", Patterns::List(Patterns::Double(), 3, 3), "dummy");
 
-      parameters.declare_entry("T", "0", Patterns::Double(), "dummy");
-      parameters.declare_entry("deltat", "0", Patterns::Double(), "dummy");
+      parameters.declare_entry("T", "0.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("deltat", "0.0", Patterns::Double(), "dummy");
       parameters.declare_entry("degree", "0", Patterns::Integer(), "dummy");
 
       parameters.declare_entry("radius", "10.0", Patterns::Double(), "dummy");
-      parameters.declare_entry("center_x", "0.0", Patterns::Double(), "dummy");
-      parameters.declare_entry("center_y", "0.0", Patterns::Double(), "dummy");
-      parameters.declare_entry("center_z", "0.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("center_coords", "0.0, 0.0, 0.0", Patterns::List(Patterns::Double(), 3, 3), "dummy");
 
       parameters.parse_input(prm_file);
   }
