@@ -116,14 +116,15 @@ void FisherKol<dim>::assemble_system()
 
   // The coefficients are constant throughout the program
   const double alpha = parameters.get_double("coef_alpha");
-  const double d_ext = parameters.get_double("coef_dext");
-  const double d_axn = parameters.get_double("coef_daxn");
+  // const double d_ext = parameters.get_double("coef_dext");
+  // const double d_axn = parameters.get_double("coef_daxn");
   const double deltat = parameters.get_double("deltat");
 
-  Tensor<2, dim> D_matrix;
-  for (unsigned int i = 0; i < dim; ++i){
-    D_matrix[i][i] = d_ext;
-  }
+  // Tensor<2, dim> D_matrix;
+  // for (unsigned int i = 0; i < dim; ++i){
+  //   D_matrix[i][i] = d_ext;
+  // }
+  // D_matrix[0][0] += d_axn;
 
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
@@ -141,9 +142,7 @@ void FisherKol<dim>::assemble_system()
 
       for (unsigned int q = 0; q < n_q; ++q)
         {
-          Tensor<2, dim> temp = fiber.isotropic(fe_values.quadrature_point(q));
-
-          D_matrix += d_axn * temp;
+          Tensor<2, dim> D_matrix = fiber.value(fe_values.quadrature_point(q));
 
           for (unsigned int i = 0; i < dofs_per_cell; ++i)
             {
