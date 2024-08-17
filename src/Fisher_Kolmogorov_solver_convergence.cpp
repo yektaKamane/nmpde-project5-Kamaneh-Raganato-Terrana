@@ -242,7 +242,11 @@ void FisherKol<dim>::assemble_system()
               // If current face lies on the boundary, and its boundary ID (or
               // tag) is that of one of the Neumann boundaries, we assemble the
               // boundary integral.
-              if (cell->face(face_number)->at_boundary())
+              if (cell->face(face_number)->at_boundary() &&
+                  (cell->face(face_number)->boundary_id() == 0 ||
+                   cell->face(face_number)->boundary_id() == 1 ||
+                   cell->face(face_number)->boundary_id() == 2 ||
+                   cell->face(face_number)->boundary_id() == 3))
                 {
                   fe_values_boundary.reinit(cell, face_number);
 
@@ -263,6 +267,40 @@ void FisherKol<dim>::assemble_system()
 
   jacobian_matrix.compress(VectorOperation::add);
   residual_vector.compress(VectorOperation::add);
+
+  // Dirichlet boundary conditions.
+  // {
+    // std::map<types::global_dof_index, double> boundary_values;
+  // {
+  //   std::map<types::global_dof_index, double> boundary_values;
+
+    // std::map<types::boundary_id, const Function<dim> *> boundary_functions;
+    // Functions::ZeroFunction<dim>                        zero_function;
+  //   std::map<types::boundary_id, const Function<dim> *> boundary_functions;
+  //   // Functions::ZeroFunction<dim>                        zero_function;
+
+    // boundary_functions[0] = &function_g;
+    // boundary_functions[1] = &function_g;
+    // boundary_functions[2] = &function_g;
+    // boundary_functions[3] = &function_g;
+  //   boundary_functions[0] = &function_g;
+  //   boundary_functions[1] = &function_g;
+  //   boundary_functions[2] = &function_g;
+  //   boundary_functions[3] = &function_g;
+
+    // VectorTools::interpolate_boundary_values(dof_handler,
+    //                                          boundary_functions,
+    //                                          boundary_values);
+  //   VectorTools::interpolate_boundary_values(dof_handler,
+  //                                            boundary_functions,
+  //                                            boundary_values);
+
+  //   MatrixTools::apply_boundary_values(
+  //     boundary_values, jacobian_matrix, delta_owned, residual_vector, false);
+  // }
+  //   MatrixTools::apply_boundary_values(
+  //     boundary_values, jacobian_matrix, delta_owned, residual_vector, false);
+  // }
 }
 
 template <int dim>
@@ -283,13 +321,50 @@ template <int dim>
 void FisherKol<dim>::solve_newton()
 {
   const unsigned int n_max_iters        = 100;
-  const double       residual_tolerance = 1e-6;
+  const double       residual_tolerance = 1e-3;
 
   unsigned int n_iter        = 0;
   double       residual_norm = residual_tolerance + 1;
 
   // We apply the boundary conditions to the initial guess (which is stored in
   // solution_owned and solution).
+  //   {
+  //   IndexSet dirichlet_dofs = DoFTools::extract_boundary_dofs(dof_handler);
+  //   dirichlet_dofs          = dirichlet_dofs & dof_handler.locally_owned_dofs();
+
+  //   function_g.set_time(time);
+
+  //   TrilinosWrappers::MPI::Vector vector_dirichlet(solution_owned);
+  //   VectorTools::interpolate(dof_handler, function_g, vector_dirichlet);
+
+  //   for (const auto &idx : dirichlet_dofs)
+  //     solution_owned[idx] = vector_dirichlet[idx];
+
+  //   solution_owned.compress(VectorOperation::insert);
+  //   solution = solution_owned;
+  // }
+  // {
+  //   IndexSet neumann_dofs = DoFTools::extract_boundary_dofs(dof_handler);
+  //   neumann_dofs          = neumann_dofs & dof_handler.locally_owned_dofs();
+  //   IndexSet dirichlet_dofs = DoFTools::extract_boundary_dofs(dof_handler);
+  //   dirichlet_dofs          = dirichlet_dofs & dof_handler.locally_owned_dofs();
+
+  //   function_h.set_time(time);
+  //   function_g.set_time(time);
+
+  //   TrilinosWrappers::MPI::Vector vector_neumann(solution_owned);
+  //   VectorTools::interpolate(dof_handler, function_h, vector_neumann);
+  //   TrilinosWrappers::MPI::Vector vector_dirichlet(solution_owned);
+  //   VectorTools::interpolate(dof_handler, function_g, vector_dirichlet);
+
+  //   for (const auto &idx : neumann_dofs)
+  //     solution_owned[idx] = vector_neumann[idx];
+  //   for (const auto &idx : dirichlet_dofs)
+  //     solution_owned[idx] = vector_dirichlet[idx];
+
+  //   solution_owned.compress(VectorOperation::insert);
+  //   solution = solution_owned;
+  // }
   {
     IndexSet neumann_dofs = DoFTools::extract_boundary_dofs(dof_handler);
     neumann_dofs          = neumann_dofs & dof_handler.locally_owned_dofs();
