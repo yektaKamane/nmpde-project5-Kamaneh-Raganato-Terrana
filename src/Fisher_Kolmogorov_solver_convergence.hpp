@@ -228,21 +228,27 @@ public:
       //   return std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]) * std::cos(M_PI * p[2]);
 
       // Initial condition for exploring the behavior in the axonal direction.
-      if (dim == 2)
-      {
-        if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
-          return 0.1;
+      // if (dim == 2)
+      // {
+      //   if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
+      //     return 0.1;
+      // }
+
+      // if (dim == 3)
+      // {
+      //   // Use this initial condition with the brain mesh.
+      //   // if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 && p[2] < 50.0 && p[2] > 40.0)
+      //   //   return 0.95;
+
+      //   // Use this initial condition with the cube mesh.
+      //   if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
+      //     return 0.1;
+      // }
+      if (dim == 2) {
+        return std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]) + 2;
       }
-
-      if (dim == 3)
-      {
-        // Use this initial condition with the brain mesh.
-        // if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 && p[2] < 50.0 && p[2] > 40.0)
-        //   return 0.95;
-
-        // Use this initial condition with the cube mesh.
-        if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
-          return 0.1;
+      if (dim == 3) {
+        return 0.0;
       }
 
       return 0.0;
