@@ -154,11 +154,19 @@ void FisherKol<dim>::assemble_system()
   forcing_term.set_time(time);
 
   // The coefficients are constant throughout the program
-  const double alpha = parameters.get_double("coef_alpha");
-  const double d_ext = parameters.get_double("coef_dext");
-  const double d_axn = parameters.get_double("coef_daxn");
+  const double alpha  = parameters.get_double("coef_alpha");
+  const double d_ext  = parameters.get_double("coef_dext");
+  const double d_axn  = parameters.get_double("coef_daxn");
   const double deltat = parameters.get_double("deltat");
   const int    fib    = parameters.get_integer("fib");
+
+  // Assemble the diffusion coefficient matrix.
+  // Step 1: the extracellular diffusion matrix is d_ext * I, where I is the identity matrix. We start assembling D_matrix
+  // by setting the diagonal elements to d_ext.
+  // Step 2: the anisotropic diffusion matrix is d_axn * (n x n), where n is the local axonal direction. We complete assembling
+  // D_matrix by adding the contribution given by the fiber tensor.
+
+  // Step 1 of assembling the diffusion coefficient matrix.
   Tensor<2, dim> D_matrix;
   for (unsigned int i = 0; i < dim; ++i){
     D_matrix[i][i] = d_ext;
@@ -261,7 +269,9 @@ void FisherKol<dim>::assemble_system()
               // If current face lies on the boundary, and its boundary ID (or
               // tag) is that of one of the Neumann boundaries, we assemble the
               // boundary integral.
-              if (cell->face(face_number)->at_boundary())
+              if (cell->face(face_number)->at_boundary() &&
+                  (cell->face(face_number)->boundary_id() == 0 ||
+                   cell->face(face_number)->boundary_id() == 1))
                 {
                   fe_values_boundary.reinit(cell, face_number);
 
@@ -304,7 +314,7 @@ template <int dim>
 void FisherKol<dim>::solve_newton()
 {
   const unsigned int n_max_iters        = 100;
-  const double       residual_tolerance = 1e-6;
+  const double       residual_tolerance = 1e-3;
 
   unsigned int n_iter        = 0;
   double       residual_norm = residual_tolerance + 1;
