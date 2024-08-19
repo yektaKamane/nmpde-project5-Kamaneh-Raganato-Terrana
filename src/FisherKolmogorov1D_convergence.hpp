@@ -93,8 +93,9 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      double temp_val = std::cos(M_PI * p[0]);
-      return (M_PI * M_PI - 2) * temp_val + temp_val * temp_val;
+      // double temp_val = std::cos(M_PI * p[0]);
+      // return (M_PI * M_PI - 2) * temp_val + temp_val * temp_val;
+      return 0.0;
     }
   };
 
@@ -149,7 +150,12 @@ public:
       // }
       // if (p[0]>=0.45 && p[0]<=0.55)
       //   return 0.1;
-      return std::cos(M_PI * p[0]);
+      // return std::cos(M_PI * p[0]);
+
+      if (p[0]>=0.45 && p[0]<=0.55)
+        return 0.1;
+  
+      return 0.0;
   
       // return 0.0;
       // return p[0] * (1 - p[0]) * p[1] * (1 - p[1]);
@@ -157,28 +163,28 @@ public:
   };
 
   // Exact solution.
-  class ExactSolution : public Function<dim>
-  {
-  public:
-    virtual double
-    value(const Point<dim> &p,
-          const unsigned int /*component*/ = 0) const override
-    {
-      return std::cos(M_PI*p[0]) * std::exp(-this->get_time());
-    }
+  // class ExactSolution : public Function<dim>
+  // {
+  // public:
+  //   virtual double
+  //   value(const Point<dim> &p,
+  //         const unsigned int /*component*/ = 0) const override
+  //   {
+  //     return std::cos(M_PI*p[0]) * std::exp(-this->get_time());
+  //   }
 
-    virtual Tensor<1, dim>
-    gradient(const Point<dim> &p,
-             const unsigned int /*component*/ = 0) const override
-    {
-      Tensor<1, dim> result;
+  //   virtual Tensor<1, dim>
+  //   gradient(const Point<dim> &p,
+  //            const unsigned int /*component*/ = 0) const override
+  //   {
+  //     Tensor<1, dim> result;
 
-      // duex / dx
-      result[0] = -M_PI * std::sin(M_PI * p[0]) * std::exp(-this->get_time());
+  //     // duex / dx
+  //     result[0] = -M_PI * std::sin(M_PI * p[0]) * std::exp(-this->get_time());
 
-      return result;
-    }
-  };
+  //     return result;
+  //   }
+  // };
 
   // Constructor. We provide the final time, time step Delta t and theta method
   // parameter as constructor arguments.
@@ -273,7 +279,7 @@ protected:
   FunctionU0 u_0;
 
   // Exact solution.
-  ExactSolution exact_solution;
+  // ExactSolution exact_solution;
 
   // Current time.
   double time;
