@@ -6,6 +6,7 @@
 #include <deal.II/base/utilities.h>
 
 #include <deal.II/distributed/fully_distributed_tria.h>
+#include <deal.II/base/convergence_table.h>
 
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
@@ -15,6 +16,18 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/fe_values_extractors.h>
 #include <deal.II/fe/mapping_fe.h>
+
+#include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_system.h>
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/fe_values_extractors.h>
+#include <deal.II/fe/mapping_fe.h>
+
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_out.h>
+#include <deal.II/grid/tria.h>
+#include <deal.II/grid/grid_in.h>
+
 
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/grid_tools.h>
@@ -108,30 +121,56 @@ public:
         center.push_back(std::stod(item));
       }
 
-      const double temp = (p[0] - center[0])*(p[0] - center[0]) + (p[1] - center[1])*(p[1] - center[1]);
-      const double sigma = radius/3.0;
-      double distance = 0.0;
-      double gaussian = 0.0;
-
-      if (dim == 2){
-        distance = std::sqrt(temp);
-        gaussian = exp(- ((p[0] - center[0])*(p[0] - center[0]) + (p[1] - center[1])*(p[1] - center[1]))/( 2 *sigma*sigma));
+      // Compute the squared distance between point 'p' and the center
+      double distance_squared = 0.0;
+      for (unsigned int i = 0; i < dim; ++i)
+      {
+          distance_squared += (p[i] - center[i]) * (p[i] - center[i]);
       }
 
-      if (dim == 3){
-        distance = std::sqrt(temp + (p[2] - center[2])*(p[2] - center[2]));
-        gaussian = exp(- ((p[0] - center[0])*(p[0] - center[0]) + (p[1] - center[1])*(p[1] - center[1]) + (p[2] - center[2])*(p[2] - center[2]))/( 2 *sigma*sigma));
-      }
+      // Define sigma and compute Gaussian value
+      const double sigma = radius / 3.0;
+      const double gaussian = std::exp(-distance_squared / (2.0 * sigma * sigma));
 
-      if (distance <= radius)
-        return gaussian;
+      // Check if the distance from the center is within the radius
+      if (std::sqrt(distance_squared) <= radius)
+          return gaussian;
       else
-        return 0.0;
+          return 0.0;
     }
     
     private:
       const FisherKol<dim> &fisher_kol;  // Added member to store reference to FisherKol
   
+  };
+
+  // Function for the forcing term.
+  class ForcingTerm : public Function<dim>
+  {
+  public:
+    virtual double
+    value(const Point<dim> & p,
+          const unsigned int /*component*/ = 0) const override
+    {
+      return 0.0;
+    }
+  };
+
+  // Function for Neumann boundary condition.
+  class FunctionH : public Function<dim>
+  {
+  public:
+    // Constructor.
+    FunctionH()
+    {}
+
+    // Evaluation.
+    virtual double
+    value(const Point<dim> & /*p*/,
+          const unsigned int /*component*/ = 0) const override
+    {
+      return 0.0;
+    }
   };
 
    // Exact solution
@@ -261,6 +300,12 @@ protected:
 
   FunctionN fiber;
 
+  // Forcing term.
+  ForcingTerm forcing_term;
+
+  // Neumann boundary condition.
+  FunctionH function_h;
+
   // Initial conditions.
   FunctionU0 u_0;
 
@@ -296,6 +341,9 @@ protected:
 
   // Quadrature formula.
   std::unique_ptr<Quadrature<dim>> quadrature;
+
+  // Quadrature formula used on boundary lines.
+  std::unique_ptr<Quadrature<dim - 1>> quadrature_boundary;
 
   // DoF handler.
   DoFHandler<dim> dof_handler;
