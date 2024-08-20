@@ -29,6 +29,8 @@
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 
+#include <deal.II/base/parameter_handler.h>
+
 #include <fstream>
 #include <iostream>
 
@@ -39,51 +41,49 @@ template <int dim>
 class FisherKol
 {
 public:
-  // Physical dimension (1D, 2D, 3D)
-  // static constexpr unsigned int dim = 1; // MODIFIED
 
-  // Function for the alpha coefficient.
-  // class FunctionAlpha : public Function<dim>
-  // {
-  // public:
-  //   virtual double
-  //   value(const Point<dim> & /*p*/,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return 2.0;
-  //   }
-  // };
-  
   // Function of the fiber field
   class FunctionN
   {
   public:
-    Tensor<2, dim>
-    isotropic(const Point<dim> & /*p*/) const
-    {
-      Tensor<1, dim> n;
-      for (unsigned int i = 0; i < dim; ++i)
-        n[i] = 0.0;
-      return outer_product(n, n);
-    }
-  };
 
-  // // Function of the matrix D
-  // class FunctionD
-  // {
-  // public:
-  //   Tensor<2, dim> matrix_value(const Point<dim> & /*p*/ /* ,
-  //                  Tensor<2,dim> &values */) const
-  //   {
-  //     Tensor<2, dim> values;
-  //     for (unsigned int i = 0; i < dim; ++i)
-  //     {
-  //       values[i][i] = 0.0002;
-  //     }
-  //     // values[1][1] += 10.0;
-  //     return values;
-  //   }
-  // };
+    FunctionN(const FisherKol<dim> &fisher_kol) : fisher_kol(fisher_kol) {}
+
+    Tensor<2, dim>
+    value(const Point<dim> & /*p*/) const
+    {
+      Tensor<2, dim> values;
+      Tensor<1, dim> n_vector;
+
+      const double d_ext = fisher_kol.parameters.get_double("coef_dext");
+      const double d_axn = fisher_kol.parameters.get_double("coef_daxn");
+
+      std::string list_string = fisher_kol.parameters.get("normal_vector");
+      std::stringstream ss(list_string);
+      std::string item;
+
+      unsigned int index = 0;
+      while (std::getline(ss, item, ','))
+      {
+        n_vector[index] = std::stod(item);
+        index++;
+      } 
+
+      // making sure the vector is normalized
+      const double norm = n_vector.norm();
+      if (norm != 0.0) n_vector /= norm;
+
+      // computing the D_matrix
+      Tensor<2, dim> identity_matrix = unit_symmetric_tensor<dim>();
+      values = d_ext * identity_matrix + d_axn * outer_product(n_vector, n_vector);
+
+      return values;
+    }
+
+    private:
+      const FisherKol<dim> &fisher_kol;
+
+  };
 
   // Function for the forcing term.
   class ForcingTerm : public Function<dim>
@@ -98,18 +98,6 @@ public:
       return 0.0;
     }
   };
-
-  // Function for Dirichlet boundary conditions.
-  // class FunctionG : public Function<dim>
-  // {
-  // public:
-  //   virtual double
-  //   value(const Point<dim> & /*p*/,
-  //         const unsigned int /*component*/ = 0) const override
-  //   {
-  //     return 0.0;
-  //   }
-  // };
 
   // Function for Neumann boundary condition.
   class FunctionH : public Function<dim>
@@ -128,39 +116,82 @@ public:
     }
   };
 
-  // Function for initial conditions.
+    // Function for initial conditions.
   class FunctionU0 : public Function<dim>
   {
   public:
+
+    /* NEW */
+    FunctionU0(const FisherKol<dim> &fisher_kol) : fisher_kol(fisher_kol) {}
+
     virtual double
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
-      // if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
-      // // if (p[0] < 0.05 && p[0] > -0.05 && p[1] < 0.05 && p[1] > -0.05 && p[2] < 0.05 && p[2] > -0.05)
-      // // if(p[0] == 0)
-      // {
-      //   return 0.1;
-      // }
-      
-      // if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 /*&& p[2] < 50.0 && p[2] > 40.0*/)
-      // if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
-      // {
-      //   return 0.3;
-      // }
-      // if (p[0]>=0.45 && p[0]<=0.55)
-      //   return 0.1;
-      // return std::cos(M_PI * p[0]);
+      const double radius   = fisher_kol.parameters.get_double("radius");
+      std::string list_string = fisher_kol.parameters.get("center_coords");
 
-      if (p[0]>=0.45 && p[0]<=0.55)
-        return 0.1;
-  
-      return 0.0;
-  
-      // return 0.0;
-      // return p[0] * (1 - p[0]) * p[1] * (1 - p[1]);
+      std::vector<double> center;
+      std::stringstream ss(list_string);
+      std::string item;
+
+      while (std::getline(ss, item, ','))
+      {
+        center.push_back(std::stod(item));
+      }
+
+      const double temp = (p[0] - center[0])*(p[0] - center[0]);
+      const double sigma = radius/3.0;
+      double distance = 0.0;
+      double gaussian = 0.0;
+
+      distance = std::sqrt(temp);
+      gaussian = exp(- ((p[0] - center[0])*(p[0] - center[0]))/( 2 *sigma*sigma));
+
+      if (distance <= radius)
+        return gaussian;
+      else
+        return 0.0;
     }
+    
+    private:
+      const FisherKol<dim> &fisher_kol;  // Added member to store reference to FisherKol
+  
   };
+
+  // Function for initial conditions.
+  // class FunctionU0 : public Function<dim>
+  // {
+  // public:
+  //   virtual double
+  //   value(const Point<dim> & p,
+  //         const unsigned int /*component*/ = 0) const override
+  //   {
+  //     // if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45 && p[2] < 0.55 && p[2] > 0.45)
+  //     // // if (p[0] < 0.05 && p[0] > -0.05 && p[1] < 0.05 && p[1] > -0.05 && p[2] < 0.05 && p[2] > -0.05)
+  //     // // if(p[0] == 0)
+  //     // {
+  //     //   return 0.1;
+  //     // }
+      
+  //     // if (p[0] < 80.0 && p[0] > 70.0 && p[1] < 95.0 && p[1] > 90.0 /*&& p[2] < 50.0 && p[2] > 40.0*/)
+  //     // if (p[0] < 0.55 && p[0] > 0.45 && p[1] < 0.55 && p[1] > 0.45)
+  //     // {
+  //     //   return 0.3;
+  //     // }
+  //     // if (p[0]>=0.45 && p[0]<=0.55)
+  //     //   return 0.1;
+  //     // return std::cos(M_PI * p[0]);
+
+  //     if (p[0]>=0.45 && p[0]<=0.55)
+  //       return 0.1;
+  
+  //     return 0.0;
+  
+  //     // return 0.0;
+  //     // return p[0] * (1 - p[0]) * p[1] * (1 - p[1]);
+  //   }
+  // };
 
   // Exact solution.
   // class ExactSolution : public Function<dim>
@@ -202,15 +233,20 @@ public:
     // , deltat(deltat_)
     , prm_file(prm_file_)
     , mesh(MPI_COMM_WORLD)
+    , fiber(*this) // Changed: Pass reference of this to fiber
+    , u_0(*this) // Changed: Pass reference of this to u_0
   {
-      parameters.declare_entry("coef_alpha", "0.0", Patterns::Double(), "dummy");
-      parameters.declare_entry("coef_dext", "0.0", Patterns::Double(), "dummy");
-      parameters.declare_entry("coef_daxn", "0.0", Patterns::Double(), "dummy");
-      parameters.declare_entry("fib", "0", Patterns::Integer(), "dummy");
+      parameters.declare_entry("coef_alpha", "1.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("coef_dext", "1.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("coef_daxn", "1.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("normal_vector", "0.0, 0.0, 0.0", Patterns::List(Patterns::Double(), 3, 3), "dummy");
 
       parameters.declare_entry("T", "0.0", Patterns::Double(), "dummy");
       parameters.declare_entry("deltat", "0.0", Patterns::Double(), "dummy");
       parameters.declare_entry("degree", "0", Patterns::Integer(), "dummy");
+
+      parameters.declare_entry("radius", "10.0", Patterns::Double(), "dummy");
+      parameters.declare_entry("center_coords", "0.0, 0.0, 0.0", Patterns::List(Patterns::Double(), 3, 3), "dummy");
 
       parameters.parse_input(prm_file);
   }
@@ -244,6 +280,7 @@ protected:
   void
   output(const unsigned int &time_step) const;
 
+
   // MPI parallel. /////////////////////////////////////////////////////////////
 
   // Number of MPI processes.
@@ -257,20 +294,10 @@ protected:
 
   // Problem definition. ///////////////////////////////////////////////////////
 
-  // alpha coefficient.
-  // FunctionAlpha alpha;
-
-  // ...
   FunctionN fiber;
-
-  // matrix D.
-  // FunctionD D;
 
   // Forcing term.
   ForcingTerm forcing_term;
-
-  // Dirichlet boundary conditions.
-  // FunctionG function_g;
 
   // Neumann boundary condition.
   FunctionH function_h;

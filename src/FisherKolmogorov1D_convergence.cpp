@@ -6,27 +6,6 @@ template <int dim>
 void FisherKol<dim>::setup()
 {
   // Create the mesh.
-  // {
-  //   pcout << "Initializing the mesh" << std::endl;
-
-  //   Triangulation<dim> mesh_serial;
-
-  //   GridIn<dim> grid_in;
-  //   grid_in.attach_triangulation(mesh_serial);
-
-  //   std::ifstream grid_in_file(mesh_file_name);
-  //   grid_in.read_msh(grid_in_file);
-
-  //   GridTools::partition_triangulation(mpi_size, mesh_serial);
-  //   const auto construction_data = TriangulationDescription::Utilities::
-  //     create_description_from_triangulation(mesh_serial, MPI_COMM_WORLD);
-  //   mesh.create_triangulation(construction_data);
-
-  //   pcout << "  Number of elements = " << mesh.n_global_active_cells()
-  //         << std::endl;
-  // }
-
-  // Create the mesh.
   {
       pcout << "Initializing the mesh" << std::endl;
 
@@ -155,14 +134,13 @@ void FisherKol<dim>::assemble_system()
 
   // The coefficients are constant throughout the program
   const double alpha = parameters.get_double("coef_alpha");
-  const double d_ext = parameters.get_double("coef_dext");
-  const double d_axn = parameters.get_double("coef_daxn");
+  // const double d_ext = parameters.get_double("coef_dext");
+  // const double d_axn = parameters.get_double("coef_daxn");
   const double deltat = parameters.get_double("deltat");
-  const int    fib    = parameters.get_integer("fib");
-  Tensor<2, dim> D_matrix;
-  for (unsigned int i = 0; i < dim; ++i){
-    D_matrix[i][i] = d_ext;
-  }
+  // Tensor<2, dim> D_matrix;
+  // for (unsigned int i = 0; i < dim; ++i){
+  //   D_matrix[i][i] = d_ext;
+  // }
 
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
@@ -188,10 +166,12 @@ void FisherKol<dim>::assemble_system()
 
 
           // Step 2 of assembling the diffusion coefficient matrix.
-          Tensor<2, dim> temp;
-          temp = fiber.isotropic(fe_values.quadrature_point(q));
+          // Tensor<2, dim> temp;
+          // temp = fiber.isotropic(fe_values.quadrature_point(q));
 
-          D_matrix += d_axn * temp;
+          // D_matrix += d_axn * temp;
+
+          Tensor<2, dim> D_matrix = fiber.value(fe_values.quadrature_point(q));
 
           const double f_loc =
             forcing_term.value(fe_values.quadrature_point(q));
