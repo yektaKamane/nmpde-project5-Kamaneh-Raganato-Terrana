@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "Fisher_Kolmogorov_solver.hpp"
-#include "convergence.hpp"
 
 // Main function.
 int
@@ -33,7 +32,8 @@ main(int argc, char *argv[])
     parameter_file = "../input/test1D_convergence.prm"; // Default parameter file
   }
 
-    FisherKol<1> problem("", parameter_file);
+    unsigned const int  convergence_test = 0;
+    FisherKol<1> problem("", parameter_file, convergence_test);
 
     problem.setup();
     problem.solve();

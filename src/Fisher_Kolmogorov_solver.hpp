@@ -144,6 +144,26 @@ public:
   
   };
 
+    // initial condition fo the convergence test
+  class InitConvergence : public Function<dim>
+  {
+  public:
+    virtual double
+    value(const Point<dim> & p,
+          const unsigned int /*component*/ = 0) const override
+    {
+      if (dim == 2) {
+        return std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]) + 2;
+      }
+      if (dim == 3) {
+        return 0.0;
+      }
+
+      return 0.0;
+    }
+  };
+
+  
   // Function for the forcing term.
   class ForcingTerm : public Function<dim>
   {
@@ -152,6 +172,31 @@ public:
     value(const Point<dim> & p,
           const unsigned int /*component*/ = 0) const override
     {
+      return 0.0;
+    }
+  };
+
+  class ForcingTermConvergence : public Function<dim>
+  {
+  public:
+    virtual double
+    value(const Point<dim> & p,
+          const unsigned int /*component*/ = 0) const override
+    {
+      // Forcing term for the convergence test.
+      double temp_val = std::cos(M_PI * p[0]) * std::cos(M_PI * p[1]);
+
+      if (dim == 2)
+        return -2 * M_PI * M_PI * temp_val * std::exp(-this->get_time()) -
+               (temp_val * temp_val - 4 * temp_val + 4) * std::exp(-this->get_time() * 2);
+
+      if (dim == 3)
+      {
+        temp_val = temp_val * std::cos(M_PI * p[2]);
+        return 0.1 * temp_val * temp_val * std::exp(-this->get_time() * 2) +
+               (3 * M_PI * M_PI - 1.1) * temp_val * std::exp(-this->get_time());
+      }
+
       return 0.0;
     }
   };
@@ -223,20 +268,15 @@ public:
   // Constructor. We provide the final time, time step Delta t and theta method
   // parameter as constructor arguments.
   FisherKol(const std::string  &mesh_file_name_,
-                // const unsigned int &r_,
-                // const double       &T_,
-                // const double       &deltat_,
-                const std::string  &prm_file_)
+                const std::string  &prm_file_, 
+                const unsigned int &convergence_test_)
     : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
     , mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD))
     , pcout(std::cout, mpi_rank == 0)
-    // , T(T_)
     , mesh_file_name(mesh_file_name_)
-    // , r(r_)
-    // , deltat(deltat_)
     , prm_file(prm_file_)
+    , convergence_test(convergence_test_)
     , mesh(MPI_COMM_WORLD)
-    /*NEW*/
     , fiber(*this) // Changed: Pass reference of this to fiber
     , u_0(*this) // Changed: Pass reference of this to u_0
   {
@@ -303,11 +343,17 @@ protected:
   // Forcing term.
   ForcingTerm forcing_term;
 
+  // Forcing term for convergence.
+  ForcingTermConvergence forcing_term_conv;
+
   // Neumann boundary condition.
   FunctionH function_h;
 
   // Initial conditions.
   FunctionU0 u_0;
+
+  // Initial conditions for convergence.
+  InitConvergence u_0_conv;
 
   // Exact solution.
   ExactSolution exact_solution;
@@ -322,6 +368,8 @@ protected:
 
   // Mesh file name.
   const std::string mesh_file_name;
+
+  const unsigned int convergence_test;
 
   // Polynomial degree.
   // const unsigned int r;

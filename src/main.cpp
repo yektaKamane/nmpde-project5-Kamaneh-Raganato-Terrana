@@ -47,16 +47,17 @@ int main(int argc, char *argv[])
     parameter_file = "../input/test1.prm"; // Default parameter file
   }
 
+  unsigned const int  convergence_test = 0;
   // Instantiate the problem with the specified dimension
   if (dim == 2)
   {
-    FisherKol<2> problem(mesh_file, parameter_file);
+    FisherKol<2> problem(mesh_file, parameter_file, convergence_test);
     problem.setup();
     problem.solve();
   }
   else if (dim == 3)
   {
-    FisherKol<3> problem(mesh_file, parameter_file);
+    FisherKol<3> problem(mesh_file, parameter_file, convergence_test);
     problem.setup();
     problem.solve();
   }
