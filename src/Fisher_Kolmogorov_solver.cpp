@@ -44,6 +44,11 @@ void FisherKol<dim>::setup()
 
     // pcout << "  Quadrature points per cell = " << quadrature->size()
           // << std::endl;
+
+    quadrature_boundary = std::make_unique<QGaussSimplex<dim - 1>>(r + 1);
+
+    std::cout << "  Quadrature points per boundary cell = "
+              << quadrature_boundary->size() << std::endl;
   }
 
   // pcout << "-----------------------------------------------" << std::endl;

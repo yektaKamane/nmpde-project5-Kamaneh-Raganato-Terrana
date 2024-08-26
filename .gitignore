@@ -36,3 +36,4 @@
 build/
 dealiiExamples/
 results/
+mesh/*.msh
