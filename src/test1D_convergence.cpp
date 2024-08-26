@@ -12,14 +12,12 @@ main(int argc, char *argv[])
   const unsigned int               mpi_rank =
     Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
 
-    // Check if the correct number of command-line arguments is provided
+  // Check if the correct number of command-line arguments is provided
   if (argc < 2)
   {
     std::cerr << "Usage: " << argv[0] << " [parameter_file]" << std::endl;
     return 1;
   }
-
-
 
   // Read the optional parameter file name or use a default value
   std::string parameter_file;
@@ -37,9 +35,6 @@ main(int argc, char *argv[])
 
     problem.setup();
     problem.solve();
-    // non so, perché vorremmo salvare tutto, oppure trovare il valore finale di c e vedere quando converge e quando no?
-    // poi qualcosa tipo switch case per i tre valori di alpha e d
-  // }
 
   return 0;
 }

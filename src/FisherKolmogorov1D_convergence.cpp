@@ -135,13 +135,7 @@ void FisherKol<dim>::assemble_system()
 
   // The coefficients are constant throughout the program
   const double alpha = parameters.get_double("coef_alpha");
-  // const double d_ext = parameters.get_double("coef_dext");
-  // const double d_axn = parameters.get_double("coef_daxn");
   const double deltat = parameters.get_double("deltat");
-  // Tensor<2, dim> D_matrix;
-  // for (unsigned int i = 0; i < dim; ++i){
-  //   D_matrix[i][i] = d_ext;
-  // }
 
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
@@ -159,19 +153,6 @@ void FisherKol<dim>::assemble_system()
 
       for (unsigned int q = 0; q < n_q; ++q)
         {
-          // Evaluate coefficients on this quadrature node.
-          // const double alpha_loc = alpha.value(fe_values.quadrature_point(q));
-          // const Tensor<2, dim> D_matrix = D.matrix_value(fe_values.quadrature_point(q));
-
-          // Tensor<2, dim> temp = fiber.isotropic(fe_values.quadrature_point(q));
-
-
-          // Step 2 of assembling the diffusion coefficient matrix.
-          // Tensor<2, dim> temp;
-          // temp = fiber.isotropic(fe_values.quadrature_point(q));
-
-          // D_matrix += d_axn * temp;
-
           Tensor<2, dim> D_matrix = fiber.value(fe_values.quadrature_point(q));
 
           const double f_loc =
@@ -397,30 +378,3 @@ void FisherKol<dim>::solve()
       pcout << std::endl;
     }
 }
-
-// template <int dim>
-// double FisherKol<dim>::compute_error(const VectorTools::NormType &norm_type)
-// {
-//   FE_Q<dim> fe_linear(1);
-//   MappingFE mapping(fe_linear);
-
-//   const unsigned int r = parameters.get_integer("degree");
-
-//   const QGauss<dim> quadrature_error = QGauss<dim>(r + 2);
-
-//   exact_solution.set_time(time);
-
-//   Vector<double> error_per_cell;
-//   VectorTools::integrate_difference(mapping,
-//                                     dof_handler,
-//                                     solution,
-//                                     exact_solution,
-//                                     error_per_cell,
-//                                     quadrature_error,
-//                                     norm_type);
-
-//   const double error =
-//     VectorTools::compute_global_error(mesh, error_per_cell, norm_type);
-
-//   return error;
-// }
