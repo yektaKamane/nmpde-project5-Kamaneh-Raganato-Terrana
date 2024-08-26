@@ -4,8 +4,7 @@
 #include <iostream>
 #include <vector>
 
-// #include "Fisher_Kolmogorov_solver.hpp"
-#include "Fisher_Kolmogorov_solver_convergence.hpp"
+#include "Fisher_Kolmogorov_solver.hpp"
 
 // Main function.
 int
@@ -33,6 +32,8 @@ main(int argc, char *argv[])
     parameter_file = "../input/test2D_convergence.prm"; // Default parameter file
   }
 
+  const unsigned int convergence_test = 1;
+
   const std::vector<std::string> meshes = {"../mesh/mesh-square-h0.275000.msh",
                                            "../mesh/mesh-square-h0.150000.msh",
                                            "../mesh/mesh-square-h0.085000.msh",
@@ -48,7 +49,7 @@ main(int argc, char *argv[])
   for (unsigned int i = 0; i < meshes.size(); ++i)
     {
       // Default dimension for this 2D convergence test is 2
-      FisherKol<2> problem(meshes[i], parameter_file);
+      FisherKol<2> problem(meshes[i], parameter_file, convergence_test);
 
       problem.setup();
       problem.solve();
