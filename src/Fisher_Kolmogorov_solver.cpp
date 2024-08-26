@@ -8,7 +8,7 @@ void FisherKol<dim>::setup()
 {
   // Create the mesh.
   {
-    pcout << "Initializing the mesh" << std::endl;
+    // pcout << "Initializing the mesh" << std::endl;
 
     Triangulation<dim> mesh_serial;
 
@@ -27,30 +27,30 @@ void FisherKol<dim>::setup()
           << std::endl;
   }
 
-  pcout << "-----------------------------------------------" << std::endl;
+  // pcout << "-----------------------------------------------" << std::endl;
 
   // Initialize the finite element space.
   {
-    pcout << "Initializing the finite element space" << std::endl;
+    // pcout << "Initializing the finite element space" << std::endl;
 
     const unsigned int r = parameters.get_integer("degree");
     fe = std::make_unique<FE_SimplexP<dim>>(r);
 
-    pcout << "  Degree                     = " << fe->degree << std::endl;
-    pcout << "  DoFs per cell              = " << fe->dofs_per_cell
-          << std::endl;
+    // pcout << "  Degree                     = " << fe->degree << std::endl;
+    // pcout << "  DoFs per cell              = " << fe->dofs_per_cell
+          // << std::endl;
 
     quadrature = std::make_unique<QGaussSimplex<dim>>(r + 1);
 
-    pcout << "  Quadrature points per cell = " << quadrature->size()
-          << std::endl;
+    // pcout << "  Quadrature points per cell = " << quadrature->size()
+          // << std::endl;
   }
 
-  pcout << "-----------------------------------------------" << std::endl;
+  // pcout << "-----------------------------------------------" << std::endl;
 
   // Initialize the DoF handler.
   {
-    pcout << "Initializing the DoF handler" << std::endl;
+    // pcout << "Initializing the DoF handler" << std::endl;
 
     dof_handler.reinit(mesh);
     dof_handler.distribute_dofs(*fe);
@@ -61,25 +61,25 @@ void FisherKol<dim>::setup()
     pcout << "  Number of DoFs = " << dof_handler.n_dofs() << std::endl;
   }
 
-  pcout << "-----------------------------------------------" << std::endl;
+  // pcout << "-----------------------------------------------" << std::endl;
 
   // Initialize the linear system.
   {
-    pcout << "Initializing the linear system" << std::endl;
+    // pcout << "Initializing the linear system" << std::endl;
 
-    pcout << "  Initializing the sparsity pattern" << std::endl;
+    // pcout << "  Initializing the sparsity pattern" << std::endl;
 
     TrilinosWrappers::SparsityPattern sparsity(locally_owned_dofs,
                                                MPI_COMM_WORLD);
     DoFTools::make_sparsity_pattern(dof_handler, sparsity);
     sparsity.compress();
 
-    pcout << "  Initializing the matrices" << std::endl;
+    // pcout << "  Initializing the matrices" << std::endl;
     jacobian_matrix.reinit(sparsity);
 
-    pcout << "  Initializing the system right-hand side" << std::endl;
+    // pcout << "  Initializing the system right-hand side" << std::endl;
     residual_vector.reinit(locally_owned_dofs, MPI_COMM_WORLD);
-    pcout << "  Initializing the solution vector" << std::endl;
+    // pcout << "  Initializing the solution vector" << std::endl;
     solution_owned.reinit(locally_owned_dofs, MPI_COMM_WORLD);
     delta_owned.reinit(locally_owned_dofs, MPI_COMM_WORLD);
 
@@ -98,14 +98,6 @@ void FisherKol<dim>::assemble_system()
                           *quadrature,
                           update_values | update_gradients |
                             update_quadrature_points | update_JxW_values);
-
-  // Since we need to compute integrals on the boundary for Neumann conditions,
-  // we also need a FEValues object to compute quantities on boundary edges.
-  FEFaceValues<dim> fe_values_boundary(*fe,
-                                       *quadrature_boundary,
-                                       update_values |
-                                         update_quadrature_points |
-                                         update_JxW_values);
 
   FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
   Vector<double>     cell_residual(dofs_per_cell);
@@ -143,12 +135,6 @@ void FisherKol<dim>::assemble_system()
       for (unsigned int q = 0; q < n_q; ++q)
         {
           Tensor<2, dim> D_matrix = fiber.value(fe_values.quadrature_point(q));
-
-          double f_loc = 0.0;
-          if (convergence_test)
-            f_loc = forcing_term_conv.value(fe_values.quadrature_point(q));
-          else 
-            f_loc = forcing_term_conv.value(fe_values.quadrature_point(q));
 
           for (unsigned int i = 0; i < dofs_per_cell; ++i)
             {
@@ -195,35 +181,6 @@ void FisherKol<dim>::assemble_system()
                                   (1.0 - solution_loc[q]) *
                                   fe_values.shape_value(i, q) * 
                                   fe_values.JxW(q);
-
-              // Forcing term.
-              cell_residual(i) +=
-                f_loc * fe_values.shape_value(i, q) * fe_values.JxW(q);
-            }
-        }
-
-        if (cell->at_boundary())
-        {
-          for (unsigned int face_number = 0; face_number < cell->n_faces();
-               ++face_number)
-            {
-              // If current face lies on the boundary, and its boundary ID (or
-              // tag) is that of one of the Neumann boundaries, we assemble the
-              // boundary integral.
-              if (cell->face(face_number)->at_boundary() &&
-                  (cell->face(face_number)->boundary_id() == 0 ||
-                   cell->face(face_number)->boundary_id() == 1 ||
-                   cell->face(face_number)->boundary_id() == 2 ||
-                   cell->face(face_number)->boundary_id() == 3))
-                {
-                  fe_values_boundary.reinit(cell, face_number);
-
-                  for (unsigned int q = 0; q < quadrature_boundary->size(); ++q)
-                    for (unsigned int i = 0; i < dofs_per_cell; ++i)
-                      cell_residual(i) -= function_h.value(fe_values_boundary.quadrature_point(q)) * // h(xq)
-                                          fe_values_boundary.shape_value(i, q) *                     // v(xq)
-                                          fe_values_boundary.JxW(q);                                 // Jq wq
-                }
             }
         }
 
@@ -249,7 +206,7 @@ void FisherKol<dim>::solve_linear_system()
     jacobian_matrix, TrilinosWrappers::PreconditionSSOR::AdditionalData(1.0));
 
   solver.solve(jacobian_matrix, delta_owned, residual_vector, preconditioner);
-  pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;
+  // pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;
 }
 
 template <int dim>
@@ -261,30 +218,14 @@ void FisherKol<dim>::solve_newton()
   unsigned int n_iter        = 0;
   double       residual_norm = residual_tolerance + 1;
 
-  {
-    IndexSet neumann_dofs = DoFTools::extract_boundary_dofs(dof_handler);
-    neumann_dofs          = neumann_dofs & dof_handler.locally_owned_dofs();
-
-    function_h.set_time(time);
-
-    TrilinosWrappers::MPI::Vector vector_neumann(solution_owned);
-    VectorTools::interpolate(dof_handler, function_h, vector_neumann);
-
-    for (const auto &idx : neumann_dofs)
-      solution_owned[idx] = vector_neumann[idx];
-
-    solution_owned.compress(VectorOperation::insert);
-    solution = solution_owned;
-  }
-
   while (n_iter < n_max_iters && residual_norm > residual_tolerance)
     {
       assemble_system();
       residual_norm = residual_vector.l2_norm();
 
-      pcout << "  Newton iteration " << n_iter << "/" << n_max_iters
-            << " - ||r|| = " << std::scientific << std::setprecision(6)
-            << residual_norm << std::flush;
+      // pcout << "  Newton iteration " << n_iter << "/" << n_max_iters
+      //       << " - ||r|| = " << std::scientific << std::setprecision(6)
+      //       << residual_norm << std::flush;
 
       // We actually solve the system only if the residual is larger than the
       // tolerance.
@@ -297,7 +238,7 @@ void FisherKol<dim>::solve_newton()
         }
       else
         {
-          pcout << " < tolerance" << std::endl;
+          // pcout << " < tolerance" << std::endl;
         }
 
       ++n_iter;
@@ -324,24 +265,20 @@ void FisherKol<dim>::output(const unsigned int &time_step) const
 template <int dim>
 void FisherKol<dim>::solve()
 {
-  pcout << "===============================================" << std::endl;
+  // pcout << "===============================================" << std::endl;
 
   time = 0.0;
 
   // Apply the initial condition.
   {
-    pcout << "Applying the initial condition" << std::endl;
+    // pcout << "Applying the initial condition" << std::endl;
 
-    if (convergence_test)
-      VectorTools::interpolate(dof_handler, u_0_conv, solution_owned);
-    else 
-      VectorTools::interpolate(dof_handler, u_0, solution_owned);
-      
+    VectorTools::interpolate(dof_handler, u_0, solution_owned);
     solution = solution_owned;
 
     // Output the initial solution.
     output(0);
-    pcout << "-----------------------------------------------" << std::endl;
+    // pcout << "-----------------------------------------------" << std::endl;
   }
 
   unsigned int time_step = 0;
@@ -356,8 +293,8 @@ void FisherKol<dim>::solve()
       // Store the old solution, so that it is available for assembly.
       solution_old = solution;
 
-      pcout << "n = " << std::setw(3) << time_step << ", t = " << std::setw(5)
-            << std::fixed << time << std::endl;
+      // pcout << "n = " << std::setw(3) << time_step << ", t = " << std::setw(5)
+      //       << std::fixed << time << std::endl;
 
       // At every time step, we invoke Newton's method to solve the non-linear
       // problem.
@@ -365,7 +302,7 @@ void FisherKol<dim>::solve()
 
       output(time_step);
 
-      pcout << std::endl;
+      // pcout << std::endl;
     }
 }
 

@@ -8,7 +8,7 @@ void FisherKol<dim>::setup()
   // Create the mesh.
   {
       pcout << "Initializing the mesh" << std::endl;
-      const unsigned int N = 200;
+      const unsigned int N = 199;
 
       Triangulation<dim> mesh_serial;
       GridGenerator::subdivided_hyper_cube(mesh_serial, N + 1, -1.0, 1.0, true);

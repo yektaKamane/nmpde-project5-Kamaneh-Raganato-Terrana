@@ -37,9 +37,6 @@ main(int argc, char *argv[])
 
     problem.setup();
     problem.solve();
-    // non so, perché vorremmo salvare tutto, oppure trovare il valore finale di c e vedere quando converge e quando no?
-    // poi qualcosa tipo switch case per i tre valori di alpha e d
-  // }
 
   return 0;
 }

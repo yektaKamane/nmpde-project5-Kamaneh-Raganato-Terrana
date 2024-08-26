@@ -144,7 +144,7 @@ public:
   
   };
 
-    // initial condition fo the convergence test
+  // Initial condition for the convergence test.
   class InitConvergence : public Function<dim>
   {
   public:
@@ -169,7 +169,7 @@ public:
   {
   public:
     virtual double
-    value(const Point<dim> & p,
+    value(const Point<dim> & /*p*/,
           const unsigned int /*component*/ = 0) const override
     {
       return 0.0;
@@ -369,8 +369,6 @@ protected:
   // Mesh file name.
   const std::string mesh_file_name;
 
-  const unsigned int convergence_test;
-
   // Polynomial degree.
   // const unsigned int r;
 
@@ -380,6 +378,8 @@ protected:
   const std::string prm_file;
 
   ParameterHandler parameters;
+
+  const unsigned int convergence_test;
 
   // Mesh.
   parallel::fullydistributed::Triangulation<dim> mesh;
