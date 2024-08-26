@@ -8,3 +8,4 @@ deal_ii_setup_target(solver)
 
 add_executable(convergence1D src/test1D_convergence.cpp src/FisherKolmogorov1D_convergence.cpp)
 deal_ii_setup_target(convergence1D)
+

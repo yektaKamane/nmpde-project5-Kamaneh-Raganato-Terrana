@@ -53,3 +53,22 @@ To submit the job script to the cluster, use the following command:
 qsub job_script.sub
 ```
 
+### Mesh Generation
+
+#### Prerequisites
+- Ensure that Gmsh is installed on your system and is available in your system's PATH.
+
+#### Generate the 3D brain mesh
+To generate a 3D brain mesh, run:
+```bash
+gmsh scripts/convert_stl_to_msh.geo -nopopup
+```
+
+#### Generate the ellipse mesh
+To generate an ellipse mesh, open the `scripts/ellipse.geo` file and adjust the `refinement` parameter to increase or decrease the level of mesh refinement as needed. Then run:
+
+```bash
+gmsh scripts/ellipse.geo -nopopup
+```
+
+
