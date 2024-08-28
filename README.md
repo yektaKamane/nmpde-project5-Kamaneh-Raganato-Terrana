@@ -36,6 +36,14 @@ $ mpirun -np <number_of_processes> ./solver <dimension> <mesh_file_name> [parame
 - `<mesh_file_name>`: Provide the name of the mesh file.
 - `[parameters_file_name]` (optional): Provide the name of the parameters file if needed.
 
+#### Convergence Test Execution
+To run the convergence test, navigate to the `build` directory and use the following commands, replacing # with 1 or 2 for specifying the dimension:
+
+```bash
+$ ./convergence#D ../input/test#D_convergence.prm
+$ ../scripts/plot-convergence.py convergence.csv
+```
+
 ### Running on a Cluster
 To run the program on a cluster, you can use a sample PBS job script in the `scripts` directory. This script submits a job that requests 1 node with 20 processors, and a wall time of 12 hours.
 
