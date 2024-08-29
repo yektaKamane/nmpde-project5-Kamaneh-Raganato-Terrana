@@ -79,4 +79,11 @@ To generate an ellipse mesh, open the `scripts/ellipse.geo` file and adjust the 
 gmsh scripts/ellipse.geo -nopopup
 ```
 
+#### Generate the square mesh
+To generate a square mesh, open the `scripts/mesh-square.geo` file and adjust the `mesh size` parameter to increase or decrease the level of mesh refinement as needed. Then run:
+
+```bash
+gmsh scripts/mesh-square.geo -nopopup
+```
+
 
